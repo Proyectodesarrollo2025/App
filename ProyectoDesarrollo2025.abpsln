@@ -1,0 +1,55 @@
+{
+  "id": "35b5ad67-059b-46e3-b0f1-f7bc865589f5",
+  "template": "app",
+  "versions": {
+    "AbpFramework": "9.3.2",
+    "AbpStudio": "1.2.2",
+    "TargetDotnetFramework": "net9.0"
+  },
+  "modules": {
+    "ProyectoDesarrollo2025": {
+      "path": "ProyectoDesarrollo2025.abpmdl"
+    }
+  },
+  "runProfiles": {
+    "Default": {
+      "path": "etc/abp-studio/run-profiles/Default.abprun.json"
+    }
+  },
+  "options": {
+    "httpRequests": {
+      "ignoredUrls": [
+      
+      ]
+    }
+  },
+  "creatingStudioConfiguration": {
+    "template": "app",
+    "createdAbpStudioVersion": "1.2.2",
+    "tiered": "false",
+    "runInstallLibs": "true",
+    "useLocalReferences": "false",
+    "multiTenancy": "false",
+    "includeTests": "false",
+    "kubernetesConfiguration": "false",
+    "uiFramework": "angular",
+    "mobileFramework": "none",
+    "distributedEventBus": "none",
+    "databaseProvider": "ef",
+    "runDbMigrator": "true",
+    "databaseManagementSystem": "sqlserver",
+    "separateTenantSchema": "false",
+    "createInitialMigration": "true",
+    "theme": "leptonx-lite",
+    "themeStyle": "",
+    "themeMenuPlacement": "",
+    "mobileFramework": "none",
+    "progressiveWebApp": "false",
+    "runProgressiveWebAppSupport": "false",
+    "publicWebsite": "false",
+    "socialLogin": "false",
+    "selectedLanguages": ["Arabic", "Chinese (Simplified)", "Chinese (Traditional)", "Czech", "English", "English (United Kingdom)", "Finnish", "French", "German (Germany)", "Hindi ", "Hungarian", "Icelandic", "Italian", "Portuguese (Brazil)", "Romanian (Romania)", "Russian", "Slovak", "Spanish", "Swedish", "Turkish", ],
+    "defaultLanguage": "Arabic",
+    "createCommand": "abp new ProyectoDesarrollo2025 -t app --ui-framework angular --database-provider ef --database-management-system sqlserver --theme leptonx-lite --no-tests --without-cms-kit --dont-run-bundling --no-multi-tenancy --no-social-logins -no-gdpr -no-openiddict-admin-ui -no-audit-logging -no-file-management -no-language-management -no-text-template-management"
+  }
+}

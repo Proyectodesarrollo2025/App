@@ -1,0 +1,76 @@
+{
+  "template": "app",
+  "imports": {
+    "Volo.Abp.LeptonXLiteTheme": {
+      "version": "4.3.2",
+      "isInstalled": true
+    },
+    "Volo.Abp.Account": {
+      "version": "9.3.2",
+      "isInstalled": true
+    },
+    "Volo.Abp.OpenIddict": {
+      "version": "9.3.2",
+      "isInstalled": true
+    },
+    "Volo.Abp.Identity": {
+      "version": "9.3.2",
+      "isInstalled": true
+    },
+    "Volo.Abp.SettingManagement": {
+      "version": "9.3.2",
+      "isInstalled": true
+    },
+    "Volo.Abp.PermissionManagement": {
+      "version": "9.3.2",
+      "isInstalled": true
+    },
+    "Volo.Abp.FeatureManagement": {
+      "version": "9.3.2",
+      "isInstalled": true
+    }
+  },
+  "folders": {
+    "items": {
+      "src": {}
+    }
+  },
+  "packages": {
+    "ProyectoDesarrollo2025.Application": {
+      "path": "src/ProyectoDesarrollo2025.Application/ProyectoDesarrollo2025.Application.abppkg",
+      "folder": "src"
+    },
+    "ProyectoDesarrollo2025.Domain.Shared": {
+      "path": "src/ProyectoDesarrollo2025.Domain.Shared/ProyectoDesarrollo2025.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "ProyectoDesarrollo2025.Application.Contracts": {
+      "path": "src/ProyectoDesarrollo2025.Application.Contracts/ProyectoDesarrollo2025.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "ProyectoDesarrollo2025.HttpApi": {
+      "path": "src/ProyectoDesarrollo2025.HttpApi/ProyectoDesarrollo2025.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "ProyectoDesarrollo2025.HttpApi.Client": {
+      "path": "src/ProyectoDesarrollo2025.HttpApi.Client/ProyectoDesarrollo2025.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "ProyectoDesarrollo2025.EntityFrameworkCore": {
+      "path": "src/ProyectoDesarrollo2025.EntityFrameworkCore/ProyectoDesarrollo2025.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "ProyectoDesarrollo2025.DbMigrator": {
+      "path": "src/ProyectoDesarrollo2025.DbMigrator/ProyectoDesarrollo2025.DbMigrator.abppkg",
+      "folder": "src"
+    },
+    "ProyectoDesarrollo2025.HttpApi.Host": {
+      "path": "src/ProyectoDesarrollo2025.HttpApi.Host/ProyectoDesarrollo2025.HttpApi.Host.abppkg",
+      "folder": "src"
+    },
+    "ProyectoDesarrollo2025.Domain": {
+      "path": "src/ProyectoDesarrollo2025.Domain/ProyectoDesarrollo2025.Domain.abppkg",
+      "folder": "src"
+    }
+  }
+}

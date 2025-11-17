@@ -1,0 +1,97 @@
+{
+  "template": "app",
+  "imports": {
+    "Volo.Abp.LeptonXLiteTheme": {
+      "version": "4.3.2",
+      "isInstalled": true
+    },
+    "Volo.Abp.Account": {
+      "version": "9.3.2",
+      "isInstalled": true
+    },
+    "Volo.Abp.OpenIddict": {
+      "version": "9.3.2",
+      "isInstalled": true
+    },
+    "Volo.Abp.Identity": {
+      "version": "9.3.2",
+      "isInstalled": true
+    },
+    "Volo.Abp.SettingManagement": {
+      "version": "9.3.2",
+      "isInstalled": true
+    },
+    "Volo.Abp.PermissionManagement": {
+      "version": "9.3.2",
+      "isInstalled": true
+    },
+    "Volo.Abp.FeatureManagement": {
+      "version": "9.3.2",
+      "isInstalled": true
+    }
+  },
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {
+    "FAFS.Application": {
+      "path": "src/FAFS.Application/FAFS.Application.abppkg",
+      "folder": "src"
+    },
+    "FAFS.Application.Tests": {
+      "path": "test/FAFS.Application.Tests/FAFS.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "FAFS.Domain.Shared": {
+      "path": "src/FAFS.Domain.Shared/FAFS.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "FAFS.Application.Contracts": {
+      "path": "src/FAFS.Application.Contracts/FAFS.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "FAFS.HttpApi": {
+      "path": "src/FAFS.HttpApi/FAFS.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "FAFS.HttpApi.Client": {
+      "path": "src/FAFS.HttpApi.Client/FAFS.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "FAFS.EntityFrameworkCore.Tests": {
+      "path": "test/FAFS.EntityFrameworkCore.Tests/FAFS.EntityFrameworkCore.Tests.abppkg",
+      "folder": "test"
+    },
+    "FAFS.EntityFrameworkCore": {
+      "path": "src/FAFS.EntityFrameworkCore/FAFS.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "FAFS.TestBase": {
+      "path": "test/FAFS.TestBase/FAFS.TestBase.abppkg",
+      "folder": "test"
+    },
+    "FAFS.Domain.Tests": {
+      "path": "test/FAFS.Domain.Tests/FAFS.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "FAFS.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/FAFS.HttpApi.Client.ConsoleTestApp/FAFS.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "FAFS.DbMigrator": {
+      "path": "src/FAFS.DbMigrator/FAFS.DbMigrator.abppkg",
+      "folder": "src"
+    },
+    "FAFS.HttpApi.Host": {
+      "path": "src/FAFS.HttpApi.Host/FAFS.HttpApi.Host.abppkg",
+      "folder": "src"
+    },
+    "FAFS.Domain": {
+      "path": "src/FAFS.Domain/FAFS.Domain.abppkg",
+      "folder": "src"
+    }
+  }
+}
