@@ -7,6 +7,14 @@ export const APP_ROUTES: Routes = [
     pathMatch: 'full',
     loadComponent: () => import('./home/home.component').then(c => c.HomeComponent),
   },
+  
+  
+  {
+    path: 'destinations',
+  loadChildren: () => import('./destinations/destinations-module').then(m => m.DestinationsModule),
+  },
+  
+
   {
     path: 'account',
     loadChildren: () => import('@abp/ng.account').then(c => c.createRoutes()),
