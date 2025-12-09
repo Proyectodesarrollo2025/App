@@ -1,7 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { finalize } from 'rxjs/operators';
-import { DestinationService } from '@proxy/destinations'; 
-import { CityDto, CitySearchRequestDto } from '@proxy/application/contracts/destinations/models'; 
+
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+
+
+import { DestinationService } from '@proxy/destinations';
+import { CityDto, CitySearchRequestDto } from '@proxy/application/contracts/destinations/models';
 
 @Component({
   selector: 'app-destinations-list',
@@ -19,18 +24,43 @@ export class DestinationsListComponent implements OnInit {
     country: ''
   };
 
+ 
+  private searchSubject = new Subject<string>();
+
   constructor(private destinationService: DestinationService) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    
+    this.searchSubject.pipe(
+      debounceTime(800),      
+      distinctUntilChanged()  
+    ).subscribe((searchTerm) => {
+     
+      this.executeSearch(searchTerm);
+    });
+  }
 
+  
+  onSearchChange(): void {
+    this.searchSubject.next(this.searchParams.query);
+  }
+
+ 
   onSearch(): void {
-    if (!this.searchParams.query && !this.searchParams.country) return;
+    this.executeSearch(this.searchParams.query);
+  }
+
+  
+  private executeSearch(query: string): void {
+    // Validamos que haya algo que buscar (texto o país)
+    if (!query && !this.searchParams.country) return;
 
     this.isLoading = true;
-    this.cities = [];
+   
+    // this.cities = []; 
 
     const request: CitySearchRequestDto = {
-      partialName: this.searchParams.query,
+      partialName: query,
       limit: 10,
       countryCode: this.searchParams.country || undefined
     };
@@ -39,7 +69,6 @@ export class DestinationsListComponent implements OnInit {
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (result: any) => {
-          
           this.cities = result.cities || result.items || [];
         },
         error: (err) => {

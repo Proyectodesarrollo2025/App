@@ -16,10 +16,11 @@
           <label class="form-label fw-bold">Nombre Ciudad</label>
           <div class="input-group">
             <span class="input-group-text"><i class="fa fa-search"></i></span>
-            <input 
+           <input 
               type="text" 
               class="form-control" 
               [(ngModel)]="searchParams.query" 
+              (ngModelChange)="onSearchChange()"
               (keyup.enter)="onSearch()"
               placeholder="Ej: Paris, Lon..."
             >
