@@ -1,8 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using NSubstitute;
 using Volo.Abp;
 using Volo.Abp.Authorization;
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Data;
 using Volo.Abp.Modularity;
 using Volo.Abp.Threading;
@@ -23,6 +26,9 @@ public class FAFSTestBaseModule : AbpModule
         {
             options.IsJobExecutionEnabled = false;
         });
+
+        // 🔹 Mock IBackgroundWorkerManager to avoid NRE in tests (caused by OpenIddict and other modules)
+        context.Services.Replace(ServiceDescriptor.Singleton(Substitute.For<IBackgroundWorkerManager>()));
 
         context.Services.AddAlwaysAllowAuthorization();
     }
