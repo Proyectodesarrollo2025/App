@@ -3,7 +3,7 @@ using Xunit;
 
 namespace FAFS.EntityFrameworkCore.Applications;
 
-[Collection(FAFSTestConsts.CollectionDefinitionName)]
+// [Collection(FAFSTestConsts.CollectionDefinitionName)]
 public class EfCoreSampleAppServiceTests : SampleAppServiceTests<FAFSEntityFrameworkCoreTestModule>
 {
 

@@ -1,4 +1,4 @@
-﻿using FAFS.Destinations;
+using FAFS.Destinations;
 using Shouldly;
 using System;
 using System.Threading.Tasks;
@@ -6,10 +6,11 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Validation;
 using Xunit;
 using FAFS.Application.Contracts.Destinations;
+using FAFS.EntityFrameworkCore;
 
-namespace FAFS.Application.Tests.Destinations
+namespace FAFS.Destinations
 {
-    public class DestinationAppService_Tests : FAFSApplicationTestBase
+    public class DestinationAppService_Tests : FAFSEntityFrameworkCoreTestBase
     {
         private readonly DestinationAppService _destinationAppService;
         private readonly IRepository<Destination, Guid> _destinationRepository;
@@ -100,4 +101,3 @@ namespace FAFS.Application.Tests.Destinations
         }
     }
 }
-
