@@ -36,9 +36,6 @@ public class FAFSEntityFrameworkCoreTestModule : AbpModule
         });
         context.Services.AddAlwaysDisableUnitOfWorkTransaction();
 
-        context.Services.AddSingleton<FakeCurrentUser>();
-        context.Services.AddSingleton<Volo.Abp.Users.ICurrentUser>(sp => sp.GetRequiredService<FakeCurrentUser>());
-
         ConfigureInMemorySqlite(context.Services);
 
     }
