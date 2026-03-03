@@ -18,6 +18,8 @@ namespace FAFS
                  .ForMember(dest => dest.Coordinates, opt => opt.MapFrom(src => new Coordinates(src.Latitude ?? string.Empty,
             src.Longitude ?? string.Empty)));
 
+            CreateMap<FAFS.Experiences.Experience, FAFS.Experiences.ExperienceDto>();
+            CreateMap<FAFS.Experiences.CreateUpdateExperienceDto, FAFS.Experiences.Experience>();
         }
     }
 }

@@ -4,6 +4,7 @@ using FAFS.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace FAFS.Migrations
 {
     [DbContext(typeof(FAFSDbContext))]
-    partial class FAFSDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260302192426_AddExperiences")]
+    partial class AddExperiences
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1972,15 +1975,6 @@ namespace FAFS.Migrations
                         });
 
                     b.Navigation("Coordinates")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("FAFS.Experiences.Experience", b =>
-                {
-                    b.HasOne("FAFS.Destinations.Destination", null)
-                        .WithMany()
-                        .HasForeignKey("DestinationId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
