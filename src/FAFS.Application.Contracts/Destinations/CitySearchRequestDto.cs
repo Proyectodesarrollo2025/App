@@ -6,5 +6,7 @@
         public string PartialName { get; set; } = string.Empty; // Texto parcial a buscar (mínimo 2 caracteres)
         public int Limit { get; set; } = 10;                    // Límite de resultados
         public string? CountryCode { get; set; }                // Código del país opcional (ej. "AR", "UY")
+        public string? RegionCode { get; set; }                 // Código de la región/estado
+        public int? MinPopulation { get; set; }                 // Población mínima
     }
 }
