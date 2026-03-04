@@ -9,4 +9,5 @@ public class PublicUserProfileDto : EntityDto<Guid>
     public string Name { get; set; }
     public string Surname { get; set; }
     public string Email { get; set; }
+    public string FotoUrl { get; set; }
 }

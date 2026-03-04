@@ -1,4 +1,5 @@
 using Volo.Abp.Identity;
+using Volo.Abp.Account;
 using Volo.Abp.ObjectExtending;
 using Volo.Abp.Threading;
 
@@ -12,17 +13,19 @@ public static class FAFSDtoExtensions
     {
         OneTimeRunner.Run(() =>
         {
-                /* You can add extension properties to DTOs
-                 * defined in the depended modules.
-                 *
-                 * Example:
-                 *
-                 * ObjectExtensionManager.Instance
-                 *   .AddOrUpdateProperty<IdentityRoleDto, string>("Title");
-                 *
-                 * See the documentation for more:
-                 * https://docs.abp.io/en/abp/latest/Object-Extensions
-                 */
+            ObjectExtensionManager.Instance
+                .AddOrUpdateProperty<ProfileDto, string>("FotoUrl")
+                .AddOrUpdateProperty<UpdateProfileDto, string>("FotoUrl")
+                .AddOrUpdateProperty<IdentityUserDto, string>("FotoUrl")
+                .AddOrUpdateProperty<IdentityUserCreateDto, string>("FotoUrl")
+                .AddOrUpdateProperty<IdentityUserUpdateDto, string>("FotoUrl");
+
+            ObjectExtensionManager.Instance
+                .AddOrUpdateProperty<ProfileDto, string>("Preferencias")
+                .AddOrUpdateProperty<UpdateProfileDto, string>("Preferencias")
+                .AddOrUpdateProperty<IdentityUserDto, string>("Preferencias")
+                .AddOrUpdateProperty<IdentityUserCreateDto, string>("Preferencias")
+                .AddOrUpdateProperty<IdentityUserUpdateDto, string>("Preferencias");
         });
     }
 }
