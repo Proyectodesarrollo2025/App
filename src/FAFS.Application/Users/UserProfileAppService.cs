@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
-using Volo.Abp.Application.Services;
+using Volo.Abp.Data;
 using Volo.Abp.Identity;
 using Volo.Abp.Users;
 
@@ -35,7 +35,8 @@ public class UserProfileAppService : FAFSAppService, IUserProfileAppService
             UserName = user.UserName,
             Name = user.Name,
             Surname = user.Surname,
-            Email = user.Email // Decidimos si el email es público o no. Por ahora lo incluimos.
+            Email = user.Email,
+            FotoUrl = user.GetProperty<string>("FotoUrl")
         };
     }
 
