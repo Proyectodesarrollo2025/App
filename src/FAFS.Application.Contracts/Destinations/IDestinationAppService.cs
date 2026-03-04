@@ -14,11 +14,14 @@ namespace FAFS.Destinations
         ICrudAppService<
             DestinationDto,              // DTO de salida (para mostrar)
             Guid,                         // Tipo de la PK de la entidad
-            PagedAndSortedResultRequestDto, // Para paginación y ordenamiento
+            GetDestinationsInput, // Para paginación, ordenamiento y filtros
             CreateUpdateDestinationDto   // DTO para crear/actualizar
         >
     {
         // Custom method for searching cities (external service)
         Task<CitySearchResultDto> SearchCitiesAsync(CitySearchRequestDto input);
+
+        // Custom method for getting city details (external service)
+        Task<CityDto?> GetCityDetailsAsync(string cityId);
     }
 }

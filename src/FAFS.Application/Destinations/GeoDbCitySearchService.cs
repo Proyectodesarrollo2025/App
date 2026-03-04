@@ -46,6 +46,16 @@ namespace FAFS.Destinations
                 url += $"&countryIds={Uri.EscapeDataString(request.CountryCode)}";
             }
 
+            if (!string.IsNullOrWhiteSpace(request.RegionCode))
+            {
+                url += $"&regionIds={Uri.EscapeDataString(request.RegionCode)}";
+            }
+
+            if (request.MinPopulation.HasValue)
+            {
+                url += $"&minPopulation={request.MinPopulation.Value}";
+            }
+
             // Mostrar en consola la URL completa que se va a llamar
             var fullUrl = $"{client.BaseAddress}{url}";
             Console.WriteLine($"[DEBUG] Request URL final: {fullUrl}");
@@ -54,7 +64,7 @@ namespace FAFS.Destinations
             {
                 // Llamar al endpoint externo
                 var response = await client.GetAsync(url);
-
+                
                 // Si la respuesta no fue exitosa, mostrar detalles
                 if (!response.IsSuccessStatusCode)
                 {
@@ -62,10 +72,7 @@ namespace FAFS.Destinations
                     Console.WriteLine($"[ERROR] Status: {(int)response.StatusCode} - {response.ReasonPhrase}");
                     Console.WriteLine($"[ERROR] Body: {errorContent}");
                 }
-               
 
-                // Por esta línea correcta:
-                Console.WriteLine($"URL final: {_options.GeoDb.BaseUrl}{url}");
                 // Asegurar éxito (lanzará excepción si no es 2xx)
                 response.EnsureSuccessStatusCode();
 
@@ -81,12 +88,15 @@ namespace FAFS.Destinations
                     {
                         result.Cities.Add(new CityDto
                         {
+                            Id = item.GetProperty("id").ToString(), // Generalmente el ID numérico o WikiDataId
                             Name = item.GetProperty("name").GetString() ?? string.Empty,
                             Country = item.GetProperty("country").GetString() ?? string.Empty,
                             CountryCode = item.GetProperty("countryCode").GetString() ?? string.Empty,
                             Region = item.TryGetProperty("region", out var r) ? r.GetString() : null,
+                            RegionCode = item.TryGetProperty("regionCode", out var rc) ? rc.GetString() : null,
                             Latitude = item.TryGetProperty("latitude", out var lat) ? lat.ToString() : null,
-                            Longitude = item.TryGetProperty("longitude", out var lon) ? lon.ToString() : null
+                            Longitude = item.TryGetProperty("longitude", out var lon) ? lon.ToString() : null,
+                            Population = item.TryGetProperty("population", out var pop) ? pop.GetInt32() : 0
                         });
                     }
                 }
@@ -97,6 +107,50 @@ namespace FAFS.Destinations
             {
                 Console.WriteLine($"[EXCEPTION] {ex.Message}");
                 throw;
+            }
+        }
+
+        public async Task<CityDto?> GetCityDetailsAsync(string cityId)
+        {
+            var client = _httpClientFactory.CreateClient("GeoDbClient");
+            client.BaseAddress = new Uri(_options.GeoDb.BaseUrl);
+            client.DefaultRequestHeaders.Add("X-RapidAPI-Key", _options.GeoDb.ApiKey);
+            client.DefaultRequestHeaders.Add("X-RapidAPI-Host", _options.GeoDb.ApiHost);
+
+            var url = $"cities/{cityId}";
+
+            try
+            {
+                var response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return null;
+                }
+
+                using var stream = await response.Content.ReadAsStreamAsync();
+                using var doc = await JsonDocument.ParseAsync(stream);
+
+                if (doc.RootElement.TryGetProperty("data", out var data))
+                {
+                    return new CityDto
+                    {
+                        Id = data.GetProperty("id").ToString(),
+                        Name = data.GetProperty("name").GetString() ?? string.Empty,
+                        Country = data.GetProperty("country").GetString() ?? string.Empty,
+                        CountryCode = data.GetProperty("countryCode").GetString() ?? string.Empty,
+                        Region = data.TryGetProperty("region", out var r) ? r.GetString() : null,
+                        RegionCode = data.TryGetProperty("regionCode", out var rc) ? rc.GetString() : null,
+                        Latitude = data.TryGetProperty("latitude", out var lat) ? lat.ToString() : null,
+                        Longitude = data.TryGetProperty("longitude", out var lon) ? lon.ToString() : null,
+                        Population = data.TryGetProperty("population", out var pop) ? pop.GetInt32() : 0
+                    };
+                }
+
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
             }
         }
     }
