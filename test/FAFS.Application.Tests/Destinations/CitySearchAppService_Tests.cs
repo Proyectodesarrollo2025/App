@@ -16,6 +16,7 @@ namespace FAFS.Application.Tests.Destinations
     {
         private readonly Mock<ICitySearchService> _mockCitySearchService;
         private readonly Mock<IRepository<Destination, Guid>> _mockRepository;
+        private readonly Mock<IRepository<DestinationRating, Guid>> _mockRatingRepository;
         private readonly DestinationAppService _appService;
 
         public CitySearchAppService_Tests()
@@ -23,9 +24,13 @@ namespace FAFS.Application.Tests.Destinations
             // 🔹 Mock del repositorio y del servicio externo
             _mockCitySearchService = new Mock<ICitySearchService>();
             _mockRepository = new Mock<IRepository<Destination, Guid>>();
+            _mockRatingRepository = new Mock<IRepository<DestinationRating, Guid>>();
 
             // 🔹 Inyección en el AppService real
-            _appService = new DestinationAppService(_mockRepository.Object, _mockCitySearchService.Object);
+            _appService = new DestinationAppService(
+                _mockRepository.Object, 
+                _mockCitySearchService.Object,
+                _mockRatingRepository.Object);
         }
 
         [Fact]

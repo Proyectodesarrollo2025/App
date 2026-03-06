@@ -12,6 +12,8 @@ namespace FAFS.Application.Contracts.Destinations
         public DateTime LastUpdated { get; set; }
         public string? Latitude { get; set; }
         public string? Longitude { get; set; }
+        public double AverageRating { get; set; }
+        public int RatingCount { get; set; }
     }
 }
 
