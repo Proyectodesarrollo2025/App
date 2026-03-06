@@ -20,11 +20,43 @@ namespace FAFS.Destinations
      IDestinationAppService //implement the IDestinationAppService
     {
         private readonly ICitySearchService _citySearchService;
+        private readonly IRepository<DestinationRating, Guid> _ratingRepository;
 
-        public DestinationAppService(IRepository<Destination, Guid> repository, ICitySearchService citySearchService)
+        public DestinationAppService(
+            IRepository<Destination, Guid> repository, 
+            ICitySearchService citySearchService,
+            IRepository<DestinationRating, Guid> ratingRepository)
             : base(repository)
         {
             _citySearchService = citySearchService;
+            _ratingRepository = ratingRepository;
+        }
+
+        public override async Task<DestinationDto> GetAsync(Guid id)
+        {
+            var dto = await base.GetAsync(id);
+            await FillRatingInfoAsync(dto);
+            return dto;
+        }
+
+        public override async Task<PagedResultDto<DestinationDto>> GetListAsync(GetDestinationsInput input)
+        {
+            var result = await base.GetListAsync(input);
+            foreach (var dto in result.Items)
+            {
+                await FillRatingInfoAsync(dto);
+            }
+            return result;
+        }
+
+        private async Task FillRatingInfoAsync(DestinationDto dto)
+        {
+            var ratings = await _ratingRepository.GetListAsync(r => r.DestinationId == dto.Id);
+            if (ratings.Any())
+            {
+                dto.AverageRating = ratings.Average(r => r.Score);
+                dto.RatingCount = ratings.Count;
+            }
         }
 
         public async Task<CitySearchResultDto> SearchCitiesAsync(CitySearchRequestDto request)
