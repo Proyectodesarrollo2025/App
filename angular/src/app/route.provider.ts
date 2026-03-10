@@ -18,10 +18,17 @@ function configureRoutes() {
       layout: eLayoutType.application,
     },
     {
+      path: '/destinations',
+      name: '::Menu:Destinations',
+      iconClass: 'fas fa-map-marked-alt',
+      order: 2,
+      layout: eLayoutType.application,
+    },
+    {
       path: '/my-profile',
       name: '::Menu:MyProfile',
       iconClass: 'fas fa-user',
-      order: 2,
+      order: 3,
       layout: eLayoutType.application,
     },
   ]);
