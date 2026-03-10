@@ -4,6 +4,7 @@ using FAFS.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace FAFS.Migrations
 {
     [DbContext(typeof(FAFSDbContext))]
-    partial class FAFSDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260310001627_UpdateFotoUrlLimit")]
+    partial class UpdateFotoUrlLimit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1080,8 +1083,8 @@ namespace FAFS.Migrations
                         .HasColumnName("ExtraProperties");
 
                     b.Property<string>("FotoUrl")
-                        .HasMaxLength(2147483647)
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit")

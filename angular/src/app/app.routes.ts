@@ -7,16 +7,25 @@ export const APP_ROUTES: Routes = [
     pathMatch: 'full',
     loadComponent: () => import('./home/home.component').then(c => c.HomeComponent),
   },
-  
-  
+
+
   {
     path: 'destinations',
     loadChildren: () => import('./destinations/destinations-module').then(m => m.DestinationsModule),
     canActivate: [authGuard] // cambio
   },
-  
+
   {
     path: 'account',
     loadChildren: () => import('@abp/ng.account').then(c => c.createRoutes()),
+  },
+  {
+    path: 'my-profile',
+    loadComponent: () => import('./my-profile/my-profile.component').then(m => m.MyProfileComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'public-profile/:id',
+    loadComponent: () => import('./public-profile/public-profile.component').then(m => m.PublicProfileComponent),
   },
 ];

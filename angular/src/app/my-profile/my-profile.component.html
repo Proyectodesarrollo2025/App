@@ -1,0 +1,99 @@
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0"><i class="fas fa-user-edit me-2"></i>Actualizar Perfil</h4>
+        </div>
+        <div class="card-body">
+          <!-- Avatar Section -->
+          <div class="text-center mb-4">
+            <div class="profile-avatar-container">
+              <img [src]="fotoUrl" class="profile-avatar shadow" alt="Avatar" />
+              <div class="avatar-overlay" (click)="fileInput.click()">
+                <i class="fas" [ngClass]="avatarLoading ? 'fa-spinner fa-spin' : 'fa-camera'"></i>
+              </div>
+            </div>
+            <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;" />
+            <p class="text-muted small mt-2">Haz clic en la imagen para cambiar tu foto</p>
+          </div>
+
+          <form [formGroup]="profileForm" (ngSubmit)="updateProfile()">
+            <div class="mb-3">
+              <label class="form-label">Nombre de usuario</label>
+              <input type="text" class="form-control" formControlName="userName" readonly />
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre</label>
+                <input type="text" class="form-control" formControlName="name" />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Apellido</label>
+                <input type="text" class="form-control" formControlName="surname" />
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Correo electrónico</label>
+              <input type="email" class="form-control" formControlName="email" />
+            </div>
+            <div class="text-end">
+              <button type="submit" class="btn btn-primary" [disabled]="profileForm.invalid || loading">
+                <i class="fas fa-save me-1"></i> Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white">
+          <h4 class="mb-0"><i class="fas fa-key me-2"></i>Cambiar Contraseña</h4>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+            <div class="mb-3">
+              <label class="form-label">Contraseña Actual</label>
+              <input type="password" class="form-control" formControlName="currentPassword" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Nueva Contraseña</label>
+              <input type="password" class="form-control" formControlName="newPassword" />
+              <div *ngIf="passwordForm.get('newPassword').errors?.minlength && passwordForm.get('newPassword').touched"
+                class="text-danger small">
+                La contraseña debe tener al menos 6 caracteres.
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Confirmar Nueva Contraseña</label>
+              <input type="password" class="form-control" formControlName="confirmPassword" />
+              <div *ngIf="passwordForm.errors?.mismatch && passwordForm.get('confirmPassword').touched"
+                class="text-danger small">
+                Las contraseñas no coinciden.
+              </div>
+            </div>
+            <div class="text-end">
+              <button type="submit" class="btn btn-secondary" [disabled]="passwordForm.invalid || passwordLoading">
+                <i class="fas fa-key me-1"></i> Actualizar Contraseña
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card border-danger shadow-sm">
+        <div class="card-header bg-danger text-white">
+          <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Zona Peligrosa</h4>
+        </div>
+        <div class="card-body">
+          <p>Una vez que elimines tu cuenta, no hay vuelta atrás. Por favor, asegúrate.</p>
+          <div class="text-end">
+            <button type="button" class="btn btn-outline-danger" (click)="deleteAccount()">
+              <i class="fas fa-trash-alt me-1"></i> Eliminar mi cuenta permanentemente
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

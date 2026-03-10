@@ -1,0 +1,37 @@
+<div class="container mt-5">
+    <div *ngIf="loading" class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+
+    <div *ngIf="error" class="alert alert-danger text-center">
+        {{ error }}
+    </div>
+
+    <div *ngIf="!loading && !error && user" class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card profile-card border-0 shadow-lg text-center p-4">
+                <div class="profile-header mb-4">
+                    <div class="avatar-container mb-3">
+                        <img [src]="user.fotoUrl || 'https://via.placeholder.com/150'" alt="Avatar"
+                            class="rounded-circle profile-img shadow">
+                    </div>
+                    <h2 class="fw-bold mb-0">{{ user.name }} {{ user.surname }}</h2>
+                    <p class="text-muted">&#64;{{ user.userName }}</p>
+                </div>
+
+                <div class="profile-body">
+                    <hr>
+                    <div class="row text-start mt-4">
+                        <div class="col-12 mb-3">
+                            <label class="text-uppercase small text-muted fw-bold">Email</label>
+                            <div class="fs-5">{{ user.email }}</div>
+                        </div>
+                        <!-- Aquí se pueden agregar más campos como Bio, Preferencias, etc. -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
