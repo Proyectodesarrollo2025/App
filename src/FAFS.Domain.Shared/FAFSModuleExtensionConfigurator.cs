@@ -46,8 +46,7 @@ public static class FAFSModuleExtensionConfigurator
                         "FotoUrl",
                         property =>
                         {
-                            property.Attributes.Add(new UrlAttribute());
-                            property.Attributes.Add(new StringLengthAttribute(512));
+                            // Configuración básica sin dependencias de base de datos
                         }
                     );
                     user.AddOrUpdateProperty<string>(
