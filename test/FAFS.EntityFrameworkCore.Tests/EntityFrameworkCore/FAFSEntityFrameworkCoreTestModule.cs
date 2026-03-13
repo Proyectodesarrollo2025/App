@@ -55,7 +55,11 @@ public class FAFSEntityFrameworkCoreTestModule : AbpModule
 
     public override void OnApplicationShutdown(ApplicationShutdownContext context)
     {
-        _sqliteConnection?.Dispose();
+        if (_sqliteConnection != null)
+        {
+            _sqliteConnection.Dispose();
+            _sqliteConnection = null;
+        }
     }
 
     private static SqliteConnection CreateDatabaseAndGetConnection()

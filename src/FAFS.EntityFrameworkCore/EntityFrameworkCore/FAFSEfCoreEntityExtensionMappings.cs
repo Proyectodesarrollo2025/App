@@ -21,7 +21,7 @@ public static class FAFSEfCoreEntityExtensionMappings
                     "FotoUrl",
                     (entityBuilder, propertyBuilder) =>
                     {
-                        propertyBuilder.HasMaxLength(512);
+                        propertyBuilder.HasMaxLength(int.MaxValue);
                     }
                 )
                 .MapEfCoreProperty<IdentityUser, string>(

@@ -1,99 +1,208 @@
-<div class="container-fluid mt-3">
-  <div class="card">
-    
-    <div class="card-header bg-white">
-      <h3 class="card-title m-0 text-primary">
-        <i class="fas fa-map-marked-alt me-2"></i>
-        Buscador de Ciudades
-      </h3>
+<div class="container py-4">
+  <!-- Cabecera -->
+  <div class="card shadow-sm mb-4 border-0 overflow-hidden">
+    <div class="card-body bg-dark text-white p-4">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="m-0 fw-bold"><i class="fas fa-map-marked-alt text-warning me-2"></i> Explorador de Destinos</h2>
+          <p class="mb-0 text-light opacity-75">Descubre tu próxima aventura por el mundo</p>
+        </div>
+        <button class="btn btn-outline-light" (click)="toggleFilters()">
+          <i class="fas" [ngClass]="showFilters ? 'fa-chevron-up' : 'fa-filter'"></i>
+          {{ showFilters ? 'Ocultar Filtros' : 'Filtros Avanzados' }}
+        </button>
+      </div>
     </div>
+  </div>
 
-    <div class="card-body">
-      
-      <div class="row g-3 mb-4 align-items-end">
-        
-        <div class="col-md-5">
-          <label class="form-label fw-bold">Nombre Ciudad</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fa fa-search"></i></span>
-           <input 
-              type="text" 
-              class="form-control" 
-              [(ngModel)]="searchParams.query" 
-              (ngModelChange)="onSearchChange()"
-              (keyup.enter)="onSearch()"
-              placeholder="Ej: Paris, Lon..."
-            >
+  <!-- Buscador y Filtros -->
+  <div class="card shadow-sm mb-4 border-0">
+    <div class="card-body p-4">
+      <div class="row g-3">
+        <div class="col-md-9">
+          <label class="form-label fw-bold text-muted small text-uppercase mb-2">Nombre de la Ciudad</label>
+          <div class="input-group input-group-lg bg-light rounded-pill px-3 py-1">
+            <span class="input-group-text border-0 bg-transparent text-muted"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control border-0 bg-transparent" [(ngModel)]="searchParams.query"
+              (ngModelChange)="onSearchChange()" (keyup.enter)="onSearch()" [disabled]="isLoading"
+              placeholder="Ej: Madrid, Tokio, Roma...">
           </div>
         </div>
-
-        <div class="col-md-4">
-          <label class="form-label fw-bold">Código País (Opcional)</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fa fa-flag"></i></span>
-            <input 
-              type="text" 
-              class="form-control" 
-              [(ngModel)]="searchParams.country" 
-              (keyup.enter)="onSearch()"
-              placeholder="Ej: AR, US, ES"
-              maxlength="2" 
-            >
-          </div>
-        </div>
-
-        <div class="col-md-3">
-          <button class="btn btn-primary w-100 mb-2" (click)="onSearch()" [disabled]="isLoading">
+        <div class="col-md-3 d-flex align-items-end">
+          <button class="btn btn-primary btn-lg w-100 rounded-pill fw-bold" (click)="onSearch()"
+            [disabled]="isLoading || searchParams.query.length < 2">
+            <i class="fas fa-spinner fa-spin me-2" *ngIf="isLoading"></i>
             {{ isLoading ? 'Buscando...' : 'Buscar' }}
           </button>
-          <button class="btn btn-outline-secondary w-100" (click)="clearSearch()">
-            Limpiar
+          <button class="btn btn-link text-muted ms-2 px-1" (click)="clearSearch()" title="Limpiar búsqueda"
+            [disabled]="isLoading">
+            <i class="fas fa-undo fa-lg"></i>
           </button>
         </div>
       </div>
 
-      <div *ngIf="isLoading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 text-muted">Consultando GeoDB...</p>
+      <!-- Filtros Avanzados (Expandibles) -->
+      <div class="mt-3 overflow-hidden transition-all" [style.max-height]="showFilters ? '500px' : '0'">
+        <hr class="opacity-10">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label small fw-bold text-muted">Código de País</label>
+            <input type="text" class="form-control bg-light border-0" [(ngModel)]="searchParams.country"
+              placeholder="Ej: ES, AR, IT" maxlength="2" [disabled]="isLoading">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-bold text-muted">Código de Región</label>
+            <input type="text" class="form-control bg-light border-0" [(ngModel)]="searchParams.region"
+              placeholder="Ej: 21, 13" [disabled]="isLoading">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-bold text-muted">Población Mínima</label>
+            <input type="number" class="form-control bg-light border-0" [(ngModel)]="searchParams.minPopulation"
+              placeholder="100000" [disabled]="isLoading">
+          </div>
+        </div>
       </div>
+    </div>
+  </div>
 
-      <div class="row" *ngIf="!isLoading && cities.length > 0">
-        <div class="col-md-4 mb-4" *ngFor="let city of cities">
-          
-          <div class="card h-100 shadow-sm border-0 bg-light">
-            <div class="card-body">
-              <h5 class="card-title text-dark fw-bold">{{ city.name }}</h5>
-              <hr>
-              
-              <p class="card-text mb-1">
-                <i class="fa fa-globe text-primary me-2"></i> 
-                <strong>País:</strong> {{ city.country }} 
-                <span *ngIf="city.countryCode" class="badge bg-secondary ms-1">{{ city.countryCode }}</span>
-              </p>
-              
-              <p class="card-text mb-1" *ngIf="city.region">
-                <i class="fa fa-map-pin text-danger me-2"></i> 
-                <strong>Región:</strong> {{ city.region }}
-              </p>
-              
-              <p class="card-text mb-3">
-                <i class="fa fa-compass text-success me-2"></i> 
-                <strong>Coords:</strong> {{ formatCoordinates(city.latitude, city.longitude) }}
-              </p>
+  <!-- Resultados de Búsqueda -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-grow text-primary" role="status"></div>
+    <p class="mt-3 text-muted tracking-wide">BUSCANDO DESTINOS...</p>
+  </div>
 
-              <button class="btn btn-outline-primary btn-sm w-100" (click)="openInMaps(city)">
-                Ver en Google Maps
+  <div *ngIf="!isLoading && cities.length > 0">
+    <h4 class="mb-4 text-dark fw-bold"><i class="fas fa-th-large me-2 text-primary"></i>Resultados de Búsqueda</h4>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+      <div class="col" *ngFor="let city of cities">
+        <div class="card h-100 destination-card border-0 shadow-sm overflow-hidden bg-white">
+          <!-- Imagen de Unsplash con badge de país -->
+          <div class="position-relative" style="height: 200px;">
+            <img [src]="city.wikiImage" class="card-img-top h-100" alt="{{ city.name }}"
+              style="object-fit: cover; filter: brightness(0.95);">
+            <div class="badge-country">{{ city.countryCode }}</div>
+          </div>
+
+          <div class="card-body p-4">
+            <h5 class="card-title fw-bold text-dark mb-1">{{ city.name }}</h5>
+            <p class="card-text text-muted small mb-3">
+              <i class="fas fa-map-marker-alt text-danger me-1"></i> {{ city.country }}
+              <span *ngIf="city.region" class="opacity-75"> • {{ city.region }}</span>
+            </p>
+
+            <div class="info-grid mb-4">
+              <div class="info-item">
+                <span class="label">Población</span>
+                <span class="value">{{ city.population | number }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Coordenadas</span>
+                <span class="value">{{ formatCoordinates(city.latitude, city.longitude) }}</span>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-primary btn-sm rounded-pill" (click)="openCityDetails(city)">
+                <i class="fas fa-info-circle"></i> Info
+              </button>
+              <button class="btn btn-outline-secondary btn-sm rounded-pill"
+                (click)="openInMaps(city.latitude, city.longitude)">
+                <i class="fas fa-directions"></i> Mapa
+              </button>
+              <button class="btn btn-success btn-sm flex-grow-1 rounded-pill shadow-sm" (click)="saveDestination(city)">
+                <i class="fas fa-bookmark me-1"></i> Guardar Destino
               </button>
             </div>
           </div>
-
         </div>
       </div>
+    </div>
+  </div>
 
-      <div *ngIf="!isLoading && cities.length === 0 && searchParams.query" class="alert alert-info text-center">
-        No se encontraron ciudades con ese nombre.
+  <div *ngIf="!isLoading && cities.length === 0 && searchParams.query"
+    class="alert alert-light border text-center py-5 shadow-sm rounded-4">
+    <i class="fas fa-search-location fa-3x mb-3 text-muted opacity-25"></i>
+    <h5 class="text-muted">No encontramos lo que buscas</h5>
+    <p class="text-muted small">Prueba quitando filtros o con un nombre más genérico.</p>
+  </div>
+
+  <!-- Destinos Populares (Guardados) -->
+  <div class="mt-5" *ngIf="savedDestinations.length > 0">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-start border-4 border-primary ps-3">
+      <h4 class="m-0 fw-bold text-dark">Mi Catálogo de Destinos</h4>
+      <span class="badge bg-light text-dark rounded-pill px-3">{{ savedDestinations.length }} guardados</span>
+    </div>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+      <div class="col" *ngFor="let dest of savedDestinations">
+        <div class="card h-100 border-0 shadow-sm bg-white overflow-hidden saved-card">
+          <div class="position-relative" style="height: 140px; background: #eee;">
+            <i class="fas fa-image position-absolute top-50 start-50 translate-middle opacity-25 fa-2x"></i>
+          </div>
+          <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <h6 class="fw-bold m-0 text-truncate text-dark">{{ dest.city }}</h6>
+              <div class="text-warning small" *ngIf="dest.averageRating">
+                <i class="fas fa-star"></i> {{ dest.averageRating | number:'1.1-1' }}
+              </div>
+            </div>
+            <p class="extra-small text-muted mb-3">{{ dest.country }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <button class="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-bold"
+                (click)="openInMaps(dest.latitude, dest.longitude)">
+                VER UBICACIÓN
+              </button>
+              <i class="fas fa-heart text-danger opacity-75"></i>
+            </div>
+          </div>
+        </div>
       </div>
+    </div>
+  </div>
 
+  <!-- Modal de Detalles (Inteligente y Seguro) -->
+  <div class="custom-modal-overlay" *ngIf="showModal" (click)="closeDetails()">
+    <div class="custom-modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header-img"
+        [style.background-image]="'url(' + (selectedCity?.wikiImage || 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=800&q=80') + ')'">
+        <button class="btn-close-custom" (click)="closeDetails()">&times;</button>
+        <div class="header-overlay">
+          <h2 class="m-0">{{ selectedCity?.name }}</h2>
+          <span class="badge bg-primary rounded-pill px-3">{{ selectedCity?.country }}</span>
+        </div>
+      </div>
+      <div class="modal-body p-4">
+        <div *ngIf="!selectedCity?.description" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-3 text-muted">Buscando historia en Wikipedia...</p>
+        </div>
+        <div *ngIf="selectedCity?.description" class="animate-fade-in">
+          <h5 class="fw-bold mb-3 d-flex align-items-center">
+            <i class="fas fa-history text-primary me-2"></i> Historia y Cultura
+          </h5>
+          <p class="description-text">{{ selectedCity.description }}</p>
+
+          <div class="row g-3 mt-4">
+            <div class="col-6">
+              <div class="bg-light p-3 rounded-4 border-0">
+                <small class="text-muted d-block text-uppercase fw-bold pb-1"
+                  style="font-size: 0.65rem;">Población</small>
+                <div class="h5 mb-0 fw-bold">{{ selectedCity.population | number }}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bg-light p-3 rounded-4 border-0">
+                <small class="text-muted d-block text-uppercase fw-bold pb-1" style="font-size: 0.65rem;">Región</small>
+                <div class="h5 mb-0 fw-bold text-truncate">{{ selectedCity.region || 'N/A' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-success w-100 py-3 mt-4 rounded-pill fw-bold shadow-sm"
+            (click)="saveDestination(selectedCity)">
+            <i class="fas fa-bookmark me-2"></i> GUARDAR ESTE DESTINO
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

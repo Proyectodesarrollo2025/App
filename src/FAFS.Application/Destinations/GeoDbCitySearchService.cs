@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Volo.Abp;
+using Microsoft.Extensions.Logging;
 
 namespace FAFS.Destinations
 {
@@ -14,118 +15,123 @@ namespace FAFS.Destinations
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ExternalApisOptions _options;
+        private readonly ILogger<GeoDbCitySearchService> _logger;
 
         public GeoDbCitySearchService(
             IHttpClientFactory httpClientFactory,
-            IOptions<ExternalApisOptions> options)
+            IOptions<ExternalApisOptions> options,
+            ILogger<GeoDbCitySearchService> logger)
         {
             _httpClientFactory = httpClientFactory;
             _options = options.Value;
+            _logger = logger;
         }
 
         public async Task<CitySearchResultDto> SearchCitiesAsync(CitySearchRequestDto request)
         {
-            // Validación básica
             if (string.IsNullOrWhiteSpace(request.PartialName) || request.PartialName.Trim().Length < 2)
             {
                 throw new BusinessException("CitySearch:InvalidPartialName")
-                    .WithData("Message", "The search text must contain at least 2 characters.");
+                    .WithData("Message", "El texto de búsqueda debe tener al menos 2 caracteres.");
             }
 
-            // Crear cliente HTTP
             var client = _httpClientFactory.CreateClient("GeoDbClient");
-            client.BaseAddress = new Uri(_options.GeoDb.BaseUrl);
-            client.DefaultRequestHeaders.Add("X-RapidAPI-Key", _options.GeoDb.ApiKey);
-            client.DefaultRequestHeaders.Add("X-RapidAPI-Host", _options.GeoDb.ApiHost);
-
-            // Construir la URL del request
-            var url = $"cities?namePrefix={Uri.EscapeDataString(request.PartialName)}&limit={request.Limit}";
+            var urlRelative = $"cities?namePrefix={Uri.EscapeDataString(request.PartialName)}&limit={request.Limit}";
 
             if (!string.IsNullOrWhiteSpace(request.CountryCode))
-            {
-                url += $"&countryIds={Uri.EscapeDataString(request.CountryCode)}";
-            }
+                urlRelative += $"&countryIds={Uri.EscapeDataString(request.CountryCode)}";
 
             if (!string.IsNullOrWhiteSpace(request.RegionCode))
-            {
-                url += $"&regionIds={Uri.EscapeDataString(request.RegionCode)}";
-            }
+                urlRelative += $"&regionIds={Uri.EscapeDataString(request.RegionCode)}";
 
             if (request.MinPopulation.HasValue)
+                urlRelative += $"&minPopulation={request.MinPopulation.Value}";
+
+            var fullUrl = new Uri(new Uri(_options.GeoDb.BaseUrl), urlRelative);
+
+            // Implementación de reintentos para manejar el límite de 429 (Too Many Requests) del plan BASIC de RapidAPI
+            int maxRetries = 2;
+            int delayMs = 1200; // Un poco más de 1 segundo para estar seguros
+
+            for (int i = 0; i <= maxRetries; i++)
             {
-                url += $"&minPopulation={request.MinPopulation.Value}";
-            }
-
-            // Mostrar en consola la URL completa que se va a llamar
-            var fullUrl = $"{client.BaseAddress}{url}";
-            Console.WriteLine($"[DEBUG] Request URL final: {fullUrl}");
-
-            try
-            {
-                // Llamar al endpoint externo
-                var response = await client.GetAsync(url);
-                
-                // Si la respuesta no fue exitosa, mostrar detalles
-                if (!response.IsSuccessStatusCode)
+                try
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[ERROR] Status: {(int)response.StatusCode} - {response.ReasonPhrase}");
-                    Console.WriteLine($"[ERROR] Body: {errorContent}");
-                }
+                    using var httpRequest = new HttpRequestMessage(HttpMethod.Get, fullUrl);
+                    httpRequest.Headers.Add("X-RapidAPI-Key", _options.GeoDb.ApiKey);
+                    httpRequest.Headers.Add("X-RapidAPI-Host", _options.GeoDb.ApiHost);
 
-                // Asegurar éxito (lanzará excepción si no es 2xx)
-                response.EnsureSuccessStatusCode();
+                    _logger.LogInformation($"[GeoDB] Intento {i + 1} para: {fullUrl}");
 
-                using var stream = await response.Content.ReadAsStreamAsync();
-                using var doc = await JsonDocument.ParseAsync(stream);
+                    var response = await client.SendAsync(httpRequest);
 
-                // Procesar la respuesta JSON
-                var result = new CitySearchResultDto();
-
-                if (doc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var item in data.EnumerateArray())
+                    if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests && i < maxRetries)
                     {
-                        result.Cities.Add(new CityDto
-                        {
-                            Id = item.GetProperty("id").ToString(), // Generalmente el ID numérico o WikiDataId
-                            Name = item.GetProperty("name").GetString() ?? string.Empty,
-                            Country = item.GetProperty("country").GetString() ?? string.Empty,
-                            CountryCode = item.GetProperty("countryCode").GetString() ?? string.Empty,
-                            Region = item.TryGetProperty("region", out var r) ? r.GetString() : null,
-                            RegionCode = item.TryGetProperty("regionCode", out var rc) ? rc.GetString() : null,
-                            Latitude = item.TryGetProperty("latitude", out var lat) ? lat.ToString() : null,
-                            Longitude = item.TryGetProperty("longitude", out var lon) ? lon.ToString() : null,
-                            Population = item.TryGetProperty("population", out var pop) ? pop.GetInt32() : 0
-                        });
+                        _logger.LogWarning($"[GeoDB] Límite de 429 alcanzado. Reintentando en {delayMs}ms...");
+                        await Task.Delay(delayMs);
+                        continue;
                     }
-                }
 
-                return result;
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        var errorContent = await response.Content.ReadAsStringAsync();
+                        _logger.LogError($"[GeoDB ERROR] Status: {(int)response.StatusCode}. Body: {errorContent}");
+                        
+                        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                            throw new UserFriendlyException("Error de autenticación con la API de ciudades.");
+
+                        throw new UserFriendlyException("El servicio de ciudades está temporalmente saturado. Intente de nuevo en unos segundos.");
+                    }
+
+                    using var stream = await response.Content.ReadAsStreamAsync();
+                    using var doc = await JsonDocument.ParseAsync(stream);
+
+                    var result = new CitySearchResultDto();
+                    if (doc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var item in data.EnumerateArray())
+                        {
+                            result.Cities.Add(new CityDto
+                            {
+                                Id = item.GetProperty("id").ToString(),
+                                Name = item.GetProperty("name").GetString() ?? string.Empty,
+                                Country = item.GetProperty("country").GetString() ?? string.Empty,
+                                CountryCode = item.GetProperty("countryCode").GetString() ?? string.Empty,
+                                Region = item.TryGetProperty("region", out var r) ? r.GetString() : null,
+                                RegionCode = item.TryGetProperty("regionCode", out var rc) ? rc.GetString() : null,
+                                Latitude = item.TryGetProperty("latitude", out var lat) ? lat.ToString() : null,
+                                Longitude = item.TryGetProperty("longitude", out var lon) ? lon.ToString() : null,
+                                Population = item.TryGetProperty("population", out var pop) ? (pop.ValueKind == JsonValueKind.Number ? pop.GetInt32() : 0) : 0
+                            });
+                        }
+                    }
+
+                    return result;
+                }
+                catch (Exception ex) when (!(ex is UserFriendlyException || ex is BusinessException))
+                {
+                    _logger.LogError(ex, "Error consultando GeoDB");
+                    if (i == maxRetries) throw new UserFriendlyException("Error al conectar con el servicio de ciudades.");
+                    await Task.Delay(delayMs);
+                }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[EXCEPTION] {ex.Message}");
-                throw;
-            }
+
+            throw new UserFriendlyException("No se pudo completar la búsqueda después de varios intentos.");
         }
 
         public async Task<CityDto?> GetCityDetailsAsync(string cityId)
         {
             var client = _httpClientFactory.CreateClient("GeoDbClient");
-            client.BaseAddress = new Uri(_options.GeoDb.BaseUrl);
-            client.DefaultRequestHeaders.Add("X-RapidAPI-Key", _options.GeoDb.ApiKey);
-            client.DefaultRequestHeaders.Add("X-RapidAPI-Host", _options.GeoDb.ApiHost);
-
-            var url = $"cities/{cityId}";
+            var fullUrl = new Uri(new Uri(_options.GeoDb.BaseUrl), $"cities/{cityId}");
 
             try
             {
-                var response = await client.GetAsync(url);
-                if (!response.IsSuccessStatusCode)
-                {
-                    return null;
-                }
+                using var httpRequest = new HttpRequestMessage(HttpMethod.Get, fullUrl);
+                httpRequest.Headers.Add("X-RapidAPI-Key", _options.GeoDb.ApiKey);
+                httpRequest.Headers.Add("X-RapidAPI-Host", _options.GeoDb.ApiHost);
+
+                var response = await client.SendAsync(httpRequest);
+                if (!response.IsSuccessStatusCode) return null;
 
                 using var stream = await response.Content.ReadAsStreamAsync();
                 using var doc = await JsonDocument.ParseAsync(stream);
@@ -142,27 +148,22 @@ namespace FAFS.Destinations
                         RegionCode = data.TryGetProperty("regionCode", out var rc) ? rc.GetString() : null,
                         Latitude = data.TryGetProperty("latitude", out var lat) ? lat.ToString() : null,
                         Longitude = data.TryGetProperty("longitude", out var lon) ? lon.ToString() : null,
-                        Population = data.TryGetProperty("population", out var pop) ? pop.GetInt32() : 0
+                        Population = data.TryGetProperty("population", out var pop) ? (pop.ValueKind == JsonValueKind.Number ? pop.GetInt32() : 0) : 0
                     };
                 }
-
                 return null;
             }
-            catch (Exception)
-            {
-                return null;
-            }
+            catch { return null; }
         }
     }
 
-    // External API configuration 
     public class ExternalApisOptions
     {
         public GeoDbOptions GeoDb { get; set; } = new();
 
         public class GeoDbOptions
         {
-            public string BaseUrl { get; set; } = "https://wft-geo-db.p.rapidapi.com/v1/geo";
+            public string BaseUrl { get; set; } = "https://wft-geo-db.p.rapidapi.com/v1/geo/";
             public string ApiHost { get; set; } = "wft-geo-db.p.rapidapi.com";
             public string ApiKey { get; set; } = string.Empty;
         }
