@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { RestService } from '@abp/ng.core';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 export interface AppNotificationDto {
     id: string;
@@ -21,6 +21,8 @@ export interface PagedResultDto<T> {
     providedIn: 'root'
 })
 export class NotificationService {
+    public notificationUpdated$ = new Subject<void>();
+
     constructor(private restService: RestService) { }
 
     getNotifications(isRead?: boolean): Observable<PagedResultDto<AppNotificationDto>> {

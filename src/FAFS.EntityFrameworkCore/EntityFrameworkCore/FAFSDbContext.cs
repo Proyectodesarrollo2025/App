@@ -29,6 +29,7 @@ public class FAFSDbContext : AbpDbContext<FAFSDbContext>, IIdentityDbContext
     public DbSet<DestinationRating> DestinationRatings { get; set; }
     public DbSet<Experience> Experiences { get; set; }
     public DbSet<AppNotification> AppNotifications { get; set; }
+    public DbSet<FavoriteDestination> FavoriteDestinations { get; set; }
 
     #region Identity
     public DbSet<IdentityUser> Users { get; set; }
@@ -102,6 +103,14 @@ public class FAFSDbContext : AbpDbContext<FAFSDbContext>, IIdentityDbContext
             b.Property(x => x.Type).IsRequired().HasMaxLength(64);
             b.HasIndex(x => x.UserId);
             b.HasIndex(x => x.IsRead);
+        });
+
+        builder.Entity<FavoriteDestination>(b =>
+        {
+            b.ToTable("FavoriteDestinations", Schema);
+            b.ConfigureByConvention();
+            b.HasIndex(x => new { x.UserId, x.DestinationId }).IsUnique(); // Un usuario solo puede guardar un destino una vez
+            b.HasOne<Destination>().WithMany().HasForeignKey(x => x.DestinationId).IsRequired().OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

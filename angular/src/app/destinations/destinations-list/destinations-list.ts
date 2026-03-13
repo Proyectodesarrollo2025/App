@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ToasterService } from '@abp/ng.theme.shared';
 
-import { DestinationService } from '@proxy/destinations';
+import { DestinationService, FavoriteDestinationService } from '@proxy/destinations';
 import { CityDto, CitySearchRequestDto, DestinationDto } from '@proxy/application/contracts/destinations/models';
 
 @Component({
@@ -34,6 +34,7 @@ export class DestinationsListComponent implements OnInit {
 
   constructor(
     private destinationService: DestinationService,
+    private favoriteService: FavoriteDestinationService,
     private toasterService: ToasterService
   ) { }
 
@@ -170,32 +171,62 @@ export class DestinationsListComponent implements OnInit {
   }
 
   loadSavedDestinations(): void {
-    this.destinationService.getList({ maxResultCount: 6, skipCount: 0 })
+    this.favoriteService.getMyFavorites()
       .subscribe(result => {
-        this.savedDestinations = result.items;
+        this.savedDestinations = result;
       });
   }
 
-  saveDestination(city: CityDto): void {
-    const input = {
-      name: city.name,
-      country: city.country,
-      city: city.name,
-      latitude: city.latitude,
-      longitude: city.longitude,
-      photoUrl: '' // Podríamos agregar una lógica para buscar fotos después
-    };
+  isFavorited(city: CityDto | any): boolean {
+    const cityName = city.name || city.city;
+    return this.savedDestinations.some(d => d.city === cityName && d.country === city.country);
+  }
 
-    this.destinationService.create(input).subscribe({
-      next: () => {
-        this.toasterService.success('Destino guardado correctamente', 'Éxito');
-        this.loadSavedDestinations();
-      },
-      error: (err) => {
-        console.error('Error al guardar:', err);
-        this.toasterService.error('No se pudo guardar el destino', 'Error');
-      }
-    });
+  getFavoriteId(city: CityDto | any): string | undefined {
+    const cityName = city.name || city.city;
+    return this.savedDestinations.find(d => d.city === cityName && d.country === city.country)?.id;
+  }
+
+  toggleFavorite(city: CityDto | any): void {
+    const existingId = this.getFavoriteId(city);
+
+    if (existingId) {
+      // Already in DB, just toggle
+      this.favoriteService.toggleFavorite(existingId).subscribe({
+        next: () => {
+          this.loadSavedDestinations();
+        },
+        error: (err) => {
+          console.error('Error al cambiar favorito:', err);
+          this.toasterService.error('No se pudo procesar la solicitud', 'Error');
+        }
+      });
+    } else {
+      // Not in DB yet, create it first
+      const input = {
+        name: city.name || city.city,
+        country: city.country,
+        city: city.name || city.city,
+        latitude: city.latitude,
+        longitude: city.longitude,
+        photoUrl: city.wikiImage || ''
+      };
+
+      this.destinationService.create(input).subscribe({
+        next: (newDest) => {
+          // Now toggle favorite
+          this.favoriteService.toggleFavorite(newDest.id).subscribe({
+            next: () => {
+              this.loadSavedDestinations();
+            }
+          });
+        },
+        error: (err) => {
+          console.error('Error al guardar destino:', err);
+          this.toasterService.error('No se pudo guardar el destino', 'Error');
+        }
+      });
+    }
   }
 
   toggleFilters(): void {

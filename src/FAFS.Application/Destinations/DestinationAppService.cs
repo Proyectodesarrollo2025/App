@@ -1,4 +1,4 @@
-﻿using FAFS.Application.Contracts.Destinations;
+using FAFS.Application.Contracts.Destinations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
+using FAFS.Notifications;
+using Volo.Abp.Guids;
 
 namespace FAFS.Destinations
 {
@@ -21,15 +23,24 @@ namespace FAFS.Destinations
     {
         private readonly ICitySearchService _citySearchService;
         private readonly IRepository<DestinationRating, Guid> _ratingRepository;
+        private readonly IRepository<FavoriteDestination, Guid> _favoriteRepository;
+        private readonly IRepository<AppNotification, Guid> _notificationRepository;
+        private readonly IGuidGenerator _guidGenerator;
 
         public DestinationAppService(
             IRepository<Destination, Guid> repository, 
             ICitySearchService citySearchService,
-            IRepository<DestinationRating, Guid> ratingRepository)
+            IRepository<DestinationRating, Guid> ratingRepository,
+            IRepository<FavoriteDestination, Guid> favoriteRepository,
+            IRepository<AppNotification, Guid> notificationRepository,
+            IGuidGenerator guidGenerator)
             : base(repository)
         {
             _citySearchService = citySearchService;
             _ratingRepository = ratingRepository;
+            _favoriteRepository = favoriteRepository;
+            _notificationRepository = notificationRepository;
+            _guidGenerator = guidGenerator;
         }
 
         public override async Task<DestinationDto> GetAsync(Guid id)
@@ -37,6 +48,42 @@ namespace FAFS.Destinations
             var dto = await base.GetAsync(id);
             await FillRatingInfoAsync(dto);
             return dto;
+        }
+
+        public override async Task<DestinationDto> UpdateAsync(Guid id, CreateUpdateDestinationDto input)
+        {
+            // Get original to check for changes
+            var original = await Repository.GetAsync(id);
+            var nameChanged = original.Name != input.Name;
+            var locationChanged = original.Coordinates?.Latitude != input.Latitude || 
+                                  original.Coordinates?.Longitude != input.Longitude;
+
+            var result = await base.UpdateAsync(id, input);
+
+            if (nameChanged || locationChanged)
+            {
+                // Send notification to ALL users who favorited this destination
+                var favoriters = await _favoriteRepository.GetListAsync(f => f.DestinationId == id);
+                var notifications = new List<AppNotification>();
+                
+                foreach (var fav in favoriters)
+                {
+                    notifications.Add(new AppNotification(
+                        _guidGenerator.Create(),
+                        fav.UserId,
+                        "Destino favorito actualizado",
+                        $"El destino '{result.Name}' que tienes en favoritos ha sido modificado.",
+                        "DestinationUpdated"
+                    ));
+                }
+
+                if (notifications.Any())
+                {
+                    await _notificationRepository.InsertManyAsync(notifications);
+                }
+            }
+
+            return result;
         }
 
         public override async Task<PagedResultDto<DestinationDto>> GetListAsync(GetDestinationsInput input)

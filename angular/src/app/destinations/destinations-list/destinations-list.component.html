@@ -109,8 +109,11 @@
                 (click)="openInMaps(city.latitude, city.longitude)">
                 <i class="fas fa-directions"></i> Mapa
               </button>
-              <button class="btn btn-success btn-sm flex-grow-1 rounded-pill shadow-sm" (click)="saveDestination(city)">
-                <i class="fas fa-bookmark me-1"></i> Guardar Destino
+              <button class="btn btn-sm flex-grow-1 rounded-pill shadow-sm" 
+                [ngClass]="isFavorited(city) ? 'btn-danger' : 'btn-outline-danger'"
+                (click)="toggleFavorite(city)">
+                <i class="fas fa-heart me-1" [ngClass]="{'text-white': isFavorited(city)}"></i> 
+                {{ isFavorited(city) ? 'Quitar' : 'Favorito' }}
               </button>
             </div>
           </div>
@@ -198,8 +201,9 @@
           </div>
 
           <button class="btn btn-success w-100 py-3 mt-4 rounded-pill fw-bold shadow-sm"
-            (click)="saveDestination(selectedCity)">
-            <i class="fas fa-bookmark me-2"></i> GUARDAR ESTE DESTINO
+            (click)="toggleFavorite(selectedCity)">
+            <i class="fas me-2" [ngClass]="isFavorited(selectedCity) ? 'fa-heart text-danger' : 'fa-bookmark'"></i>
+            {{ isFavorited(selectedCity) ? 'QUITAR DE FAVORITOS' : 'GUARDAR ESTE DESTINO' }}
           </button>
         </div>
       </div>
