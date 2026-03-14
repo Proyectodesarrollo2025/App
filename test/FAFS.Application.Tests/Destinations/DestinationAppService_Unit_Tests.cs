@@ -10,6 +10,7 @@ using Moq;
 using Shouldly;
 using Volo.Abp.Domain.Repositories;
 using Xunit;
+using FAFS.Notifications;
 
 namespace FAFS.Application.Tests.Destinations
 {
@@ -17,19 +18,28 @@ namespace FAFS.Application.Tests.Destinations
     {
         private readonly Mock<IRepository<Destination, Guid>> _mockDestinationRepository;
         private readonly Mock<IRepository<DestinationRating, Guid>> _mockRatingRepository;
+        private readonly Mock<IRepository<FavoriteDestination, Guid>> _mockFavoriteRepository;
+        private readonly Mock<IRepository<AppNotification, Guid>> _mockNotificationRepository;
         private readonly Mock<ICitySearchService> _mockCitySearchService;
+        private readonly Mock<Volo.Abp.Guids.IGuidGenerator> _mockGuidGenerator;
         private readonly DestinationAppService _appService;
 
         public DestinationAppService_Unit_Tests()
         {
             _mockDestinationRepository = new Mock<IRepository<Destination, Guid>>();
             _mockRatingRepository = new Mock<IRepository<DestinationRating, Guid>>();
+            _mockFavoriteRepository = new Mock<IRepository<FavoriteDestination, Guid>>();
+            _mockNotificationRepository = new Mock<IRepository<AppNotification, Guid>>();
             _mockCitySearchService = new Mock<ICitySearchService>();
+            _mockGuidGenerator = new Mock<Volo.Abp.Guids.IGuidGenerator>();
             
             _appService = new DestinationAppService(
                 _mockDestinationRepository.Object, 
                 _mockCitySearchService.Object,
-                _mockRatingRepository.Object);
+                _mockRatingRepository.Object,
+                _mockFavoriteRepository.Object,
+                _mockNotificationRepository.Object,
+                _mockGuidGenerator.Object);
         }
 
         [Fact]

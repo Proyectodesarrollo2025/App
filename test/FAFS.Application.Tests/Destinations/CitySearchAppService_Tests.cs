@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -9,6 +9,7 @@ using Volo.Abp.Domain.Repositories;
 using Xunit;
 using FAFS.Destinations;
 using FAFS.Application.Contracts.Destinations;
+using FAFS.Notifications;
 
 namespace FAFS.Application.Tests.Destinations
 {
@@ -17,6 +18,9 @@ namespace FAFS.Application.Tests.Destinations
         private readonly Mock<ICitySearchService> _mockCitySearchService;
         private readonly Mock<IRepository<Destination, Guid>> _mockRepository;
         private readonly Mock<IRepository<DestinationRating, Guid>> _mockRatingRepository;
+        private readonly Mock<IRepository<FavoriteDestination, Guid>> _mockFavoriteRepository;
+        private readonly Mock<IRepository<AppNotification, Guid>> _mockNotificationRepository;
+        private readonly Mock<Volo.Abp.Guids.IGuidGenerator> _mockGuidGenerator;
         private readonly DestinationAppService _appService;
 
         public CitySearchAppService_Tests()
@@ -25,12 +29,18 @@ namespace FAFS.Application.Tests.Destinations
             _mockCitySearchService = new Mock<ICitySearchService>();
             _mockRepository = new Mock<IRepository<Destination, Guid>>();
             _mockRatingRepository = new Mock<IRepository<DestinationRating, Guid>>();
+            _mockFavoriteRepository = new Mock<IRepository<FavoriteDestination, Guid>>();
+            _mockNotificationRepository = new Mock<IRepository<AppNotification, Guid>>();
+            _mockGuidGenerator = new Mock<Volo.Abp.Guids.IGuidGenerator>();
 
             // 🔹 Inyección en el AppService real
             _appService = new DestinationAppService(
                 _mockRepository.Object, 
                 _mockCitySearchService.Object,
-                _mockRatingRepository.Object);
+                _mockRatingRepository.Object,
+                _mockFavoriteRepository.Object,
+                _mockNotificationRepository.Object,
+                _mockGuidGenerator.Object);
         }
 
         [Fact]

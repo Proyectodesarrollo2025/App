@@ -12,9 +12,11 @@ import { provideLogo, withEnvironmentOptions } from "@volo/ngx-lepton-x.core";
 import { ApplicationConfig } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { environment } from '../environments/environment';
 import { APP_ROUTES } from './app.routes';
 import { APP_ROUTE_PROVIDER } from './route.provider';
+import { NotificationInterceptor } from './notifications/notification.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -36,5 +38,10 @@ export const appConfig: ApplicationConfig = {
     provideLogo(withEnvironmentOptions(environment)),
     provideAccountConfig(),
     provideAbpThemeShared(),
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: NotificationInterceptor,
+      multi: true,
+    },
   ]
 };

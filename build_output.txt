@@ -1,0 +1,25 @@
+  Determinando los proyectos que se van a restaurar...
+  Todos los proyectos están actualizados para la restauración.
+  FAFS.Domain.Shared -> C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Domain.Shared\bin\Debug\net9.0\FAFS.Domain.Shared.dll
+  FAFS.Domain -> C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Domain\bin\Debug\net9.0\FAFS.Domain.dll
+  FAFS.TestBase -> C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\test\FAFS.TestBase\bin\Debug\net9.0\FAFS.TestBase.dll
+  FAFS.Application.Contracts -> C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application.Contracts\bin\Debug\net9.0\FAFS.Application.Contracts.dll
+  FAFS.HttpApi.Client -> C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.HttpApi.Client\bin\Debug\net9.0\FAFS.HttpApi.Client.dll
+C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application\Users\UserProfileAppService.cs(39,23): warning CS8601: Posible asignación de referencia nula. [C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application\FAFS.Application.csproj]
+C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application\Notifications\NotificationAppService.cs(59,17): error CS0200: No se puede asignar a la propiedad o el indizador 'AppNotification.IsRead' porque es de solo lectura [C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application\FAFS.Application.csproj]
+C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application\Notifications\NotificationAppService.cs(71,17): error CS0200: No se puede asignar a la propiedad o el indizador 'AppNotification.IsRead' porque es de solo lectura [C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application\FAFS.Application.csproj]
+  FAFS.EntityFrameworkCore -> C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.EntityFrameworkCore\bin\Debug\net9.0\FAFS.EntityFrameworkCore.dll
+  FAFS.HttpApi -> C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.HttpApi\bin\Debug\net9.0\FAFS.HttpApi.dll
+  FAFS.HttpApi.Client.ConsoleTestApp -> C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\test\FAFS.HttpApi.Client.ConsoleTestApp\bin\Debug\net9.0\FAFS.HttpApi.Client.ConsoleTestApp.dll
+  FAFS.DbMigrator -> C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.DbMigrator\bin\Debug\net9.0\FAFS.DbMigrator.dll
+  FAFS.Domain.Tests -> C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\test\FAFS.Domain.Tests\bin\Debug\net9.0\FAFS.Domain.Tests.dll
+
+ERROR al compilar.
+
+C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application\Users\UserProfileAppService.cs(39,23): warning CS8601: Posible asignación de referencia nula. [C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application\FAFS.Application.csproj]
+C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application\Notifications\NotificationAppService.cs(59,17): error CS0200: No se puede asignar a la propiedad o el indizador 'AppNotification.IsRead' porque es de solo lectura [C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application\FAFS.Application.csproj]
+C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application\Notifications\NotificationAppService.cs(71,17): error CS0200: No se puede asignar a la propiedad o el indizador 'AppNotification.IsRead' porque es de solo lectura [C:\Users\Operador\OneDrive\Desktop\Desarrollo fabi\App\src\FAFS.Application\FAFS.Application.csproj]
+    1 Advertencia(s)
+    2 Errores
+
+Tiempo transcurrido 00:00:03.39
