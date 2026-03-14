@@ -1,6 +1,8 @@
 using FAFS.Destinations;
 using FAFS.Experiences;
+ feature/7.notificaciones-7.1-7.2
 using FAFS.Notifications;
+
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -28,8 +30,10 @@ public class FAFSDbContext : AbpDbContext<FAFSDbContext>, IIdentityDbContext
     public DbSet<Destination> Destinations { get; set; }
     public DbSet<DestinationRating> DestinationRatings { get; set; }
     public DbSet<Experience> Experiences { get; set; }
+ feature/7.notificaciones-7.1-7.2
     public DbSet<AppNotification> AppNotifications { get; set; }
     public DbSet<FavoriteDestination> FavoriteDestinations { get; set; }
+
 
     #region Identity
     public DbSet<IdentityUser> Users { get; set; }
@@ -94,6 +98,7 @@ public class FAFSDbContext : AbpDbContext<FAFSDbContext>, IIdentityDbContext
             b.HasIndex(x => x.DestinationId);
         });
 
+ feature/7.notificaciones-7.1-7.2
         builder.Entity<AppNotification>(b =>
         {
             b.ToTable("AppNotifications", Schema);
@@ -111,6 +116,14 @@ public class FAFSDbContext : AbpDbContext<FAFSDbContext>, IIdentityDbContext
             b.ConfigureByConvention();
             b.HasIndex(x => new { x.UserId, x.DestinationId }).IsUnique(); // Un usuario solo puede guardar un destino una vez
             b.HasOne<Destination>().WithMany().HasForeignKey(x => x.DestinationId).IsRequired().OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<ApiUsageMetric>(b =>
+        {
+            b.ToTable("ApiUsageMetrics", Schema);
+            b.ConfigureByConvention();
+            b.Property(x => x.Endpoint).IsRequired().HasMaxLength(256);
+            b.Property(x => x.Method).IsRequired().HasMaxLength(16);
+
         });
     }
 }
