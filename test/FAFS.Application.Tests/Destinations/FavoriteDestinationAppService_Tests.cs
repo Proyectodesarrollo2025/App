@@ -66,7 +66,7 @@ namespace FAFS.Destinations
                 .ReturnsAsync((FavoriteDestination)null);
 
             // Act
-            await _appService.ToggleFavoriteAsync(destId);
+            await _appService.ToggleFavoriteAsync(new ToggleFavoriteDto { DestinationId = destId });
 
             // Assert
             _mockFavoriteRepository.Verify(r => r.InsertAsync(It.IsAny<FavoriteDestination>(), true, default), Times.Once);
@@ -97,7 +97,7 @@ namespace FAFS.Destinations
                 .ReturnsAsync(favorite);
 
             // Act
-            await _appService.ToggleFavoriteAsync(destId);
+            await _appService.ToggleFavoriteAsync(new ToggleFavoriteDto { DestinationId = destId });
 
             // Assert
             _mockFavoriteRepository.Verify(r => r.DeleteAsync(favorite, true, default), Times.Once);
