@@ -62,7 +62,10 @@ namespace FAFS.Application.Tests.Destinations
             var method = typeof(DestinationAppService).GetMethod("FillRatingInfoAsync", BindingFlags.NonPublic | BindingFlags.Instance);
             
             // Act
-            await (Task)method.Invoke(_appService, new object[] { dto });
+            if (method != null)
+            {
+                await (Task)method.Invoke(_appService, new object[] { dto })!;
+            }
 
             // Assert
             dto.AverageRating.ShouldBe(3.0);
@@ -83,7 +86,10 @@ namespace FAFS.Application.Tests.Destinations
             var method = typeof(DestinationAppService).GetMethod("FillRatingInfoAsync", BindingFlags.NonPublic | BindingFlags.Instance);
             
             // Act
-            await (Task)method.Invoke(_appService, new object[] { dto });
+            if (method != null)
+            {
+                await (Task)method.Invoke(_appService, new object[] { dto })!;
+            }
 
             // Assert
             dto.AverageRating.ShouldBe(0);

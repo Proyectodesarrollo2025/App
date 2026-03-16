@@ -59,7 +59,7 @@
             <div class="mb-3">
               <label class="form-label">Nueva Contraseña</label>
               <input type="password" class="form-control" formControlName="newPassword" />
-              <div *ngIf="passwordForm.get('newPassword').errors?.minlength && passwordForm.get('newPassword').touched"
+              <div *ngIf="passwordForm.get('newPassword')?.errors?.['minlength'] && passwordForm.get('newPassword')?.touched"
                 class="text-danger small">
                 La contraseña debe tener al menos 6 caracteres.
               </div>
@@ -67,7 +67,7 @@
             <div class="mb-3">
               <label class="form-label">Confirmar Nueva Contraseña</label>
               <input type="password" class="form-control" formControlName="confirmPassword" />
-              <div *ngIf="passwordForm.errors?.mismatch && passwordForm.get('confirmPassword').touched"
+              <div *ngIf="passwordForm.errors?.['mismatch'] && passwordForm.get('confirmPassword')?.touched"
                 class="text-danger small">
                 Las contraseñas no coinciden.
               </div>
