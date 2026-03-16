@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
@@ -12,6 +12,7 @@ namespace FAFS.Application.Contracts.Destinations
         Task DeleteRatingAsync(Guid id);
         Task<List<DestinationRatingDto>> GetRatingsAsync(Guid destinationId);
         Task<double> GetAverageRatingAsync(Guid destinationId);
+        Task<List<DestinationRatingDto>> GetMyRatingsAsync();
     }
 
     public class DestinationRatingDto

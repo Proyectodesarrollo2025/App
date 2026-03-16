@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProfileService } from '../proxy/account/profile.service';
 import { UserProfileService } from '../proxy/users/user-profile.service';
+import { DestinationRatingService, DestinationService } from '@proxy/destinations';
+import { DestinationRatingDto, DestinationDto } from '@proxy/application/contracts/destinations/models';
 import { AuthService } from '@abp/ng.core';
 import { ToasterService } from '@abp/ng.theme.shared';
 import { ConfirmationService, Confirmation } from '@abp/ng.theme.shared';
@@ -24,6 +26,8 @@ export class MyProfileComponent implements OnInit {
     private toaster = inject(ToasterService);
     private confirmation = inject(ConfirmationService);
     private router = inject(Router);
+    private ratingService = inject(DestinationRatingService);
+    private destinationService = inject(DestinationService);
 
     profileForm: FormGroup;
     passwordForm: FormGroup;
@@ -31,11 +35,14 @@ export class MyProfileComponent implements OnInit {
     passwordLoading = false;
     fotoUrl: string = '';
     avatarLoading = false;
+    myRatings: any[] = [];
+    ratingsLoading = false;
 
     ngOnInit(): void {
         this.buildProfileForm();
         this.buildPasswordForm();
         this.loadProfile();
+        this.loadMyRatings();
     }
 
     buildProfileForm() {
@@ -142,6 +149,40 @@ export class MyProfileComponent implements OnInit {
                     this.authService.logout().subscribe(() => {
                         this.router.navigate(['/account/login']);
                     });
+                });
+            }
+        });
+    }
+
+    loadMyRatings() {
+        this.ratingsLoading = true;
+        this.ratingService.getMyRatings()
+            .pipe(finalize(() => this.ratingsLoading = false))
+            .subscribe(ratings => {
+                this.myRatings = ratings;
+                // Intentar cargar nombres de destinos si es necesario, 
+                // pero por ahora mostraremos los IDs o lo que tengamos
+                this.loadDestinationNames();
+            });
+    }
+
+    loadDestinationNames() {
+        this.myRatings.forEach(rating => {
+            this.destinationService.get(rating.destinationId).subscribe(dest => {
+                rating.destinationName = dest.city || dest.name;
+            });
+        });
+    }
+
+    deleteRating(id: string) {
+        this.confirmation.warn(
+            '¿Estás seguro de que deseas eliminar esta reseña?',
+            'Eliminar Reseña'
+        ).subscribe(status => {
+            if (status === Confirmation.Status.confirm) {
+                this.ratingService.deleteRating(id).subscribe(() => {
+                    this.toaster.success('Reseña eliminada');
+                    this.loadMyRatings();
                 });
             }
         });
