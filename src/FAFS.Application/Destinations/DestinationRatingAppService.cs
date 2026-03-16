@@ -1,4 +1,4 @@
-﻿using FAFS.Application.Contracts.Destinations;
+using FAFS.Application.Contracts.Destinations;
 using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ using Volo.Abp.Users;
 
 namespace FAFS.Destinations
 {
-    [Authorize] // 🔒 obliga a que el usuario tenga token JWT
+    [Authorize]
     public class DestinationRatingAppService : ApplicationService, IDestinationRatingAppService
     {
         private readonly IRepository<DestinationRating, Guid> _ratingRepository;
@@ -34,7 +34,6 @@ namespace FAFS.Destinations
             if (score < 1 || score > 5)
                 throw new UserFriendlyException("La puntuación debe estar entre 1 y 5.");
 
-            // Verificar si el usuario ya calificó este destino
             var ratings = await _ratingRepository.GetListAsync(r => 
                 r.DestinationId == destinationId && r.UserId == _currentUser.GetId());
             
@@ -42,7 +41,7 @@ namespace FAFS.Destinations
 
             if (existingRating != null)
             {
-                throw new UserFriendlyException("Ya has calificado este destino. Puedes editar tu calificación existente.");
+                throw new UserFriendlyException("Ya has calificado este destino.");
             }
 
             var rating = new DestinationRating(
@@ -62,11 +61,8 @@ namespace FAFS.Destinations
 
             if (rating.UserId != _currentUser.GetId())
             {
-                throw new AbpAuthorizationException("No tienes permiso para editar esta calificación.");
+                throw new AbpAuthorizationException("No tienes permiso.");
             }
-
-            if (score < 1 || score > 5)
-                throw new UserFriendlyException("La puntuación debe estar entre 1 y 5.");
 
             rating.Score = score;
             rating.Comment = comment;
@@ -80,7 +76,7 @@ namespace FAFS.Destinations
 
             if (rating.UserId != _currentUser.GetId())
             {
-                throw new AbpAuthorizationException("No tienes permiso para eliminar esta calificación.");
+                throw new AbpAuthorizationException("No tienes permiso.");
             }
 
             await _ratingRepository.DeleteAsync(rating, autoSave: true);
@@ -106,13 +102,25 @@ namespace FAFS.Destinations
         public async Task<double> GetAverageRatingAsync(Guid destinationId)
         {
             var ratings = await _ratingRepository.GetListAsync(r => r.DestinationId == destinationId);
+            return ratings.Any() ? ratings.Average(r => r.Score) : 0;
+        }
 
-            if (!ratings.Any())
+        public async Task<List<DestinationRatingDto>> GetMyRatingsAsync()
+        {
+            var userId = _currentUser.Id;
+            if (!userId.HasValue) return new List<DestinationRatingDto>();
+
+            var ratings = await _ratingRepository.GetListAsync(r => r.UserId == userId.Value);
+
+            return ratings.Select(r => new DestinationRatingDto
             {
-                return 0;
-            }
-
-            return ratings.Average(r => r.Score);
+                Id = r.Id,
+                UserId = r.UserId,
+                DestinationId = r.DestinationId,
+                Score = r.Score,
+                Comment = r.Comment,
+                CreationTime = r.CreationTime
+            }).ToList();
         }
     }
 }

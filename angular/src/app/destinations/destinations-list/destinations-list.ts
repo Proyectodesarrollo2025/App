@@ -3,9 +3,10 @@ import { finalize } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ToasterService } from '@abp/ng.theme.shared';
+import { ConfigStateService } from '@abp/ng.core';
 
-import { DestinationService, FavoriteDestinationService } from '@proxy/destinations';
-import { CityDto, CitySearchRequestDto, DestinationDto } from '@proxy/application/contracts/destinations/models';
+import { DestinationService, FavoriteDestinationService, DestinationRatingService } from '@proxy/destinations';
+import { CityDto, CitySearchRequestDto, DestinationDto, DestinationRatingDto } from '@proxy/application/contracts/destinations/models';
 
 @Component({
   selector: 'app-destinations-list',
@@ -21,7 +22,14 @@ export class DestinationsListComponent implements OnInit {
   showFilters = false;
   selectedCity: any = null;
   showModal = false;
-  private cityImageCache = new Map<string, any>();
+
+  popularDestinations: DestinationDto[] = [];
+  selectedDestinationRatings: DestinationRatingDto[] = [];
+  averageRating = 0;
+  userRating: DestinationRatingDto | null = null;
+  newRating = { score: 5, comment: '' };
+  isRatingDraft = false;
+  currentUserId: string | null = null;
 
   searchParams = {
     query: '',
@@ -35,11 +43,16 @@ export class DestinationsListComponent implements OnInit {
   constructor(
     private destinationService: DestinationService,
     private favoriteService: FavoriteDestinationService,
-    private toasterService: ToasterService
-  ) { }
+    private ratingService: DestinationRatingService,
+    private toasterService: ToasterService,
+    private configState: ConfigStateService
+  ) { 
+    this.currentUserId = this.configState.getDeep('currentUser.id');
+  }
 
   ngOnInit(): void {
     this.loadSavedDestinations();
+    this.loadPopularDestinations();
 
     this.searchSubject.pipe(
       debounceTime(1200),
@@ -87,49 +100,60 @@ export class DestinationsListComponent implements OnInit {
   }
 
   private fetchUnsplashImages() {
-    // Lista curada de IDs de fotos premium de Unsplash (Viajes, Arquitectura, Ciudades)
-    // Estos IDs son 100% estables y de alta resolución.
     const curatedPhotoIds = [
-      '1502602898657-3e91760cbb34', // Paris style
-      '1449156001566-35957096fb91', // Tokyo style
-      '1477959858617-67f85cf4f1df', // NYC style
-      '1513635269975-59663e0ac1ad', // London style
-      '1501594907352-0dfc58eb36fe', // San Francisco style
-      '1552832230-019623e618aa', // Rome style
-      '1523482580672-f109ba8cb9be', // Sydney style
-      '1520117147647-0349b22ef104', // Berlin style
-      '1493333858332-df7ed0ec419e', // Barcelona style
-      '1512100353987-0b19280d4607', // Santorini style
-      '1533105079780-92b9be482077', // Venice style
-      '1464822759023-fed622ff2c3b', // Mountains/Nature
-      '1503389158882-9366144bea98', // Modern City
-      '1480714378408-67cf0d13bc1b', // Chicago style
-      '1518684079-3c830dcef090', // Dubai style
-      '1529156069912-ab0023a73e1c', // European street
-      '1507525428034-b723cf961d3e', // Tropical Beach
-      '1519501025264-65ba15a82390', // Cityscape
-      '1534447677768-be436bb09401', // Hill city
-      '1517154421773-0529f29ea451'  // Seoul style
+      '1502602898657-3e91760cbb34', '1449156001566-35957096fb91', '1477959858617-67f85cf4f1df',
+      '1513635269975-59663e0ac1ad', '1501594907352-0dfc58eb36fe', '1552832230-019623e618aa',
+      '1523482580672-f109ba8cb9be', '1520117147647-0349b22ef104', '1493333858332-df7ed0ec419e',
+      '1512100353987-0b19280d4607', '1533105079780-92b9be482077', '1464822759023-fed622ff2c3b',
+      '1503389158882-9366144bea98', '1480714378408-67cf0d13bc1b', '1518684079-3c830dcef090',
+      '1529156069912-ab0023a73e1c', '1507525428034-b723cf961d3e', '1519501025264-65ba15a82390',
+      '1534447677768-be436bb09401', '1517154421773-0529f29ea451'
     ];
 
     for (let i = 0; i < this.cities.length; i++) {
       const city = this.cities[i];
-      // Usamos el nombre de la ciudad para generar un índice consistente
       const charSum = city.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       const photoId = curatedPhotoIds[charSum % curatedPhotoIds.length];
-
       city.wikiImage = `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&w=800&q=80`;
     }
+  }
+
+  loadPopularDestinations(): void {
+    this.destinationService.getList({ maxResultCount: 20 })
+      .subscribe(result => {
+        const items = (result as any).items || result || [];
+        // Filtramos y ordenamos por calificación
+        this.popularDestinations = items
+          .filter(d => (d.averageRating || 0) > 0)
+          .sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
+          .slice(0, 4);
+
+        // Fallback inteligente: si no hay suficientes calificados, rellenar con los últimos guardados
+        if (this.popularDestinations.length < 4) {
+          const others = items.filter(d => !this.popularDestinations.find(p => p.id === d.id)).slice(0, 4 - this.popularDestinations.length);
+          this.popularDestinations = [...this.popularDestinations, ...others];
+        }
+      });
   }
 
   async openCityDetails(city: any) {
     this.selectedCity = city;
     this.showModal = true;
+    this.selectedDestinationRatings = [];
+    this.averageRating = 0;
+    this.userRating = null;
+    this.isRatingDraft = false;
+
+    const existingDest = this.savedDestinations.find(d => 
+      (d.city === city.name || d.city === city.city) && d.country === city.country);
+
+    if (existingDest) {
+      this.loadRatings(existingDest.id);
+    }
 
     if (city.description) return;
 
     try {
-      // Usamos términos que obliguen a Wikipedia a buscar el lugar geográfico
       const searchTerms = [
         `${city.name}, ${city.country} (localidad)`,
         `${city.name}, ${city.country} (municipio)`,
@@ -138,7 +162,6 @@ export class DestinationsListComponent implements OnInit {
 
       const BANNED = /enfermedad|político|partido|médico|virus|biografía|nacido en|elecciones|mosquito|protesta/i;
       const REQUIRED = /ciudad|municipio|localidad|población|situado|clima|turismo|historia/i;
-
       let foundExtract = '';
 
       for (const term of searchTerms) {
@@ -149,7 +172,6 @@ export class DestinationsListComponent implements OnInit {
         if (data.query?.pages) {
           for (const id in data.query.pages) {
             const extract = data.query.pages[id].extract || '';
-            // Si el texto es de un lugar (contiene REQUIRED) y no es basura (NO contiene BANNED)
             if (REQUIRED.test(extract) && !BANNED.test(extract)) {
               foundExtract = extract;
               break;
@@ -158,11 +180,9 @@ export class DestinationsListComponent implements OnInit {
         }
         if (foundExtract) break;
       }
-
-      city.description = foundExtract || `Descubre ${city.name}, un destino fascinante en ${city.country} conocido por su vibrante cultura y hospitalidad. Explora sus calles y sumérgete en una experiencia única.`;
-
+      city.description = foundExtract || `Descubre ${city.name}, un destino fascinante en ${city.country} conocido por su vibrante cultura y hospitalidad.`;
     } catch (e) {
-      city.description = "La información sobre este destino se está actualizando. Es un lugar con mucho por descubrir.";
+      city.description = "La información sobre este destino se está actualizando.";
     }
   }
 
@@ -171,10 +191,9 @@ export class DestinationsListComponent implements OnInit {
   }
 
   loadSavedDestinations(): void {
-    this.favoriteService.getMyFavorites()
-      .subscribe(result => {
-        this.savedDestinations = result;
-      });
+    this.favoriteService.getMyFavorites().subscribe(result => {
+      this.savedDestinations = result;
+    });
   }
 
   isFavorited(city: CityDto | any): boolean {
@@ -189,20 +208,12 @@ export class DestinationsListComponent implements OnInit {
 
   toggleFavorite(city: CityDto | any): void {
     const existingId = this.getFavoriteId(city);
-
     if (existingId) {
-      // Already in DB, just toggle
       this.favoriteService.toggleFavorite(existingId).subscribe({
-        next: () => {
-          this.loadSavedDestinations();
-        },
-        error: (err) => {
-          console.error('Error al cambiar favorito:', err);
-          this.toasterService.error('No se pudo procesar la solicitud', 'Error');
-        }
+        next: () => this.loadSavedDestinations(),
+        error: () => this.toasterService.error('Error al cambiar favorito')
       });
     } else {
-      // Not in DB yet, create it first
       const input = {
         name: city.name || city.city,
         country: city.country,
@@ -211,20 +222,11 @@ export class DestinationsListComponent implements OnInit {
         longitude: city.longitude,
         photoUrl: city.wikiImage || ''
       };
-
       this.destinationService.create(input).subscribe({
         next: (newDest) => {
-          // Now toggle favorite
-          this.favoriteService.toggleFavorite(newDest.id).subscribe({
-            next: () => {
-              this.loadSavedDestinations();
-            }
-          });
+          this.favoriteService.toggleFavorite(newDest.id).subscribe(() => this.loadSavedDestinations());
         },
-        error: (err) => {
-          console.error('Error al guardar destino:', err);
-          this.toasterService.error('No se pudo guardar el destino', 'Error');
-        }
+        error: () => this.toasterService.error('Error al guardar destino')
       });
     }
   }
@@ -244,21 +246,9 @@ export class DestinationsListComponent implements OnInit {
   getCityImageUrl(cityOrName: any, country?: string): string {
     const name = typeof cityOrName === 'string' ? cityOrName : (cityOrName?.name || cityOrName?.city);
     const countryName = country || cityOrName?.country || '';
-
-    if (!name) {
-      return 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=800&q=80';
-    }
-
-    // Limpiamos los términos para el buscador
-    const cleanCity = name.toLowerCase().replace(/\s+/g, '-');
-    const cleanCountry = countryName.toLowerCase().replace(/\s+/g, '-');
-
-    // Usamos el nombre como 'lock' para que sea consistente pero único por ciudad
+    if (!name) return 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=800&q=80';
     const seed = name.length + (countryName.length * 2);
-
-    // Etiquetas: Ciudad + País + Paisaje + Monumento
-    const tags = `${cleanCity},${cleanCountry},landmark,city`;
-
+    const tags = `${name.toLowerCase().replace(/\s+/g, '-')},landmark,city`;
     return `https://loremflickr.com/800/600/${tags}/all?lock=${seed}`;
   }
 
@@ -272,8 +262,91 @@ export class DestinationsListComponent implements OnInit {
 
   openInMaps(lat?: string, long?: string): void {
     if (lat && long) {
-      const url = `https://www.google.com/maps/search/?api=1&query=${lat},${long}`;
-      window.open(url, '_blank');
+      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${long}`, '_blank');
+    }
+  }
+
+  loadRatings(destinationId: string): void {
+    this.ratingService.getRatings(destinationId).subscribe(ratings => {
+      this.selectedDestinationRatings = ratings;
+      this.userRating = ratings.find(r => r.userId === this.currentUserId) || null;
+      if (this.userRating) {
+        this.newRating = { score: this.userRating.score, comment: this.userRating.comment || '' };
+      } else {
+        this.newRating = { score: 5, comment: '' };
+      }
+    });
+    this.ratingService.getAverageRating(destinationId).subscribe(avg => {
+      this.averageRating = avg;
+    });
+  }
+
+  submitRating(): void {
+    const existingDest = this.savedDestinations.find(d => 
+      (d.city === this.selectedCity.name || d.city === this.selectedCity.city) && d.country === this.selectedCity.country);
+
+    if (!existingDest) {
+      this.createAndRate(this.selectedCity);
+      return;
+    }
+
+    if (this.userRating) {
+      this.ratingService.updateRating(this.userRating.id, this.newRating.score, this.newRating.comment)
+        .subscribe(() => {
+          this.toasterService.success('Calificación actualizada');
+          this.loadRatings(existingDest.id);
+          this.isRatingDraft = false;
+        });
+    } else {
+      this.ratingService.rateDestination(existingDest.id, this.newRating.score, this.newRating.comment)
+        .subscribe(() => {
+          this.toasterService.success('Calificación guardada');
+          this.loadRatings(existingDest.id);
+          this.isRatingDraft = false;
+        });
+    }
+  }
+
+  private createAndRate(city: any): void {
+    const input = {
+      name: city.name || city.city,
+      country: city.country,
+      city: city.name || city.city,
+      latitude: city.latitude,
+      longitude: city.longitude,
+      photoUrl: city.wikiImage || ''
+    };
+    this.destinationService.create(input).subscribe(newDest => {
+      this.loadSavedDestinations();
+      this.ratingService.rateDestination(newDest.id, this.newRating.score, this.newRating.comment)
+        .subscribe(() => {
+          this.toasterService.success('Destino guardado y calificado');
+          this.loadRatings(newDest.id);
+          this.isRatingDraft = false;
+        });
+    });
+  }
+
+  deleteRating(): void {
+    if (!this.userRating) return;
+    this.ratingService.deleteRating(this.userRating.id).subscribe(() => {
+      this.toasterService.success('Calificación eliminada');
+      const existingDest = this.savedDestinations.find(d => 
+        (d.city === this.selectedCity.name || d.city === this.selectedCity.city) && d.country === this.selectedCity.country);
+      if (existingDest) this.loadRatings(existingDest.id);
+      this.userRating = null;
+      this.newRating = { score: 5, comment: '' };
+    });
+  }
+
+  editRating(): void {
+    this.isRatingDraft = true;
+  }
+
+  cancelEdit(): void {
+    this.isRatingDraft = false;
+    if (this.userRating) {
+      this.newRating = { score: this.userRating.score, comment: this.userRating.comment || '' };
     }
   }
 }

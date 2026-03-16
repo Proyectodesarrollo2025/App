@@ -44,3 +44,12 @@ export interface DestinationDto extends AuditedEntityDto<string> {
   averageRating?: number;
   ratingCount?: number;
 }
+
+export interface DestinationRatingDto {
+  id: string;
+  userId: string;
+  destinationId: string;
+  score: number;
+  comment?: string;
+  creationTime: string;
+}
