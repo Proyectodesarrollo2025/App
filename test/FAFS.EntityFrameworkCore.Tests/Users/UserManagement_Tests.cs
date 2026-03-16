@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Volo.Abp.Account;
 using Volo.Abp.Identity;
+using Volo.Abp.Data;
 using Volo.Abp.Users;
 using Xunit;
 using FAFS.EntityFrameworkCore;
@@ -73,6 +74,9 @@ public class UserManagement_Tests : FAFSEntityFrameworkCoreTestBase
                 Surname = "Doe"
             };
 
+            updateInput.SetProperty("FotoUrl", "https://example.com/photo.jpg");
+            updateInput.SetProperty("Preferencias", "{\"theme\": \"dark\"}");
+
             // Act
             await _profileAppService.UpdateAsync(updateInput);
 
@@ -81,6 +85,8 @@ public class UserManagement_Tests : FAFSEntityFrameworkCoreTestBase
             updatedUser.UserName.ShouldBe(updateInput.UserName);
             updatedUser.Name.ShouldBe(updateInput.Name);
             updatedUser.Surname.ShouldBe(updateInput.Surname);
+            updatedUser.GetProperty<string>("FotoUrl").ShouldBe("https://example.com/photo.jpg");
+            updatedUser.GetProperty<string>("Preferencias").ShouldBe("{\"theme\": \"dark\"}");
         }
         finally
         {
@@ -175,5 +181,6 @@ public class UserManagement_Tests : FAFSEntityFrameworkCoreTestBase
         profile.UserName.ShouldBe(user.UserName);
         profile.Name.ShouldBe(user.Name);
         profile.Surname.ShouldBe(user.Surname);
+        profile.FotoUrl.ShouldBe(user.GetProperty<string>("FotoUrl"));
     }
 }

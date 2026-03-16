@@ -1,6 +1,7 @@
 using AutoMapper;
 using FAFS.Destinations;                         // Entidad
 using FAFS.Application.Contracts.Destinations;  // DTOs
+using FAFS.Notifications; // Added for AppNotification
 
 namespace FAFS
 {
@@ -20,6 +21,8 @@ namespace FAFS
 
             CreateMap<FAFS.Experiences.Experience, FAFS.Experiences.ExperienceDto>();
             CreateMap<FAFS.Experiences.CreateUpdateExperienceDto, FAFS.Experiences.Experience>();
+
+            CreateMap<AppNotification, AppNotificationDto>(); // Added this line
         }
     }
 }

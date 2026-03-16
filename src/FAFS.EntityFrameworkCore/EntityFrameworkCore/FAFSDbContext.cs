@@ -1,5 +1,8 @@
 using FAFS.Destinations;
 using FAFS.Experiences;
+using FAFS.Notifications;
+using FAFS.Administration;
+
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -27,6 +30,10 @@ public class FAFSDbContext : AbpDbContext<FAFSDbContext>, IIdentityDbContext
     public DbSet<Destination> Destinations { get; set; }
     public DbSet<DestinationRating> DestinationRatings { get; set; }
     public DbSet<Experience> Experiences { get; set; }
+    public DbSet<AppNotification> AppNotifications { get; set; }
+    public DbSet<FavoriteDestination> FavoriteDestinations { get; set; }
+    public DbSet<ApiUsageMetric> ApiUsageMetrics { get; set; }
+
 
     #region Identity
     public DbSet<IdentityUser> Users { get; set; }
@@ -89,6 +96,33 @@ public class FAFSDbContext : AbpDbContext<FAFSDbContext>, IIdentityDbContext
             b.Property(x => x.Rating).IsRequired();
             b.HasOne<Destination>().WithMany().HasForeignKey(x => x.DestinationId).IsRequired();
             b.HasIndex(x => x.DestinationId);
+        });
+
+        builder.Entity<AppNotification>(b =>
+        {
+            b.ToTable("AppNotifications", Schema);
+            b.ConfigureByConvention();
+            b.Property(x => x.Title).IsRequired().HasMaxLength(256);
+            b.Property(x => x.Message).IsRequired().HasMaxLength(1024);
+            b.Property(x => x.Type).IsRequired().HasMaxLength(64);
+            b.HasIndex(x => x.UserId);
+            b.HasIndex(x => x.IsRead);
+        });
+
+        builder.Entity<FavoriteDestination>(b =>
+        {
+            b.ToTable("FavoriteDestinations", Schema);
+            b.ConfigureByConvention();
+            b.HasIndex(x => new { x.UserId, x.DestinationId }).IsUnique(); // Un usuario solo puede guardar un destino una vez
+            b.HasOne<Destination>().WithMany().HasForeignKey(x => x.DestinationId).IsRequired().OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<ApiUsageMetric>(b =>
+        {
+            b.ToTable("ApiUsageMetrics", Schema);
+            b.ConfigureByConvention();
+            b.Property(x => x.Endpoint).IsRequired().HasMaxLength(256);
+            b.Property(x => x.Method).IsRequired().HasMaxLength(16);
         });
     }
 }

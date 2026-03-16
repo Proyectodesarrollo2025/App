@@ -1,4 +1,4 @@
-﻿using Localization.Resources.AbpUi;
+using Localization.Resources.AbpUi;
 using FAFS.Localization;
 using Volo.Abp.Account;
 using Volo.Abp.SettingManagement;
@@ -7,6 +7,9 @@ using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.HttpApi;
 using Volo.Abp.Localization;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc;
+using FAFS.Administration;
 
 namespace FAFS;
 
@@ -23,6 +26,11 @@ public class FAFSHttpApiModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         ConfigureLocalization();
+        
+        Configure<MvcOptions>(options =>
+        {
+            options.Filters.AddService<ApiUsageActionFilter>();
+        });
     }
 
     private void ConfigureLocalization()

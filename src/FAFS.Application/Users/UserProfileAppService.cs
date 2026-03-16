@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
-using Volo.Abp.Application.Services;
+using Volo.Abp.Data;
 using Volo.Abp.Identity;
 using Volo.Abp.Users;
 
@@ -35,8 +35,16 @@ public class UserProfileAppService : FAFSAppService, IUserProfileAppService
             UserName = user.UserName,
             Name = user.Name,
             Surname = user.Surname,
-            Email = user.Email // Decidimos si el email es público o no. Por ahora lo incluimos.
+            Email = user.Email,
+            FotoUrl = user.GetProperty<string>("FotoUrl")
         };
+    }
+
+    [Authorize]
+    public virtual async Task<PublicUserProfileDto> GetMyProfileAsync()
+    {
+        var userId = CurrentUser.GetId();
+        return await GetPublicProfileAsync(userId);
     }
 
     [Authorize]
@@ -54,6 +62,35 @@ public class UserProfileAppService : FAFSAppService, IUserProfileAppService
         if (!result.Succeeded)
         {
             throw new UserFriendlyException("Error al eliminar la cuenta: " + string.Join(", ", result.Errors));
+        }
+    }
+
+    [Authorize]
+    public virtual async Task UpdateProfilePictureAsync(UpdateProfilePictureDto input)
+    {
+        try
+        {
+            var userId = CurrentUser.GetId();
+            var user = await UserManager.FindByIdAsync(userId.ToString());
+
+            if (user == null)
+            {
+                throw new UserFriendlyException("Usuario no encontrado");
+            }
+
+            if (string.IsNullOrEmpty(input.FotoUrl))
+            {
+                throw new UserFriendlyException("La imagen está vacía");
+            }
+
+            user.SetProperty("FotoUrl", input.FotoUrl);
+            
+            // 🔹 Guardado persistente
+            await UserRepository.UpdateAsync(user, autoSave: true);
+        }
+        catch (Exception ex) when (!(ex is UserFriendlyException))
+        {
+            throw new UserFriendlyException("Error interno al procesar la imagen: " + ex.Message);
         }
     }
 }

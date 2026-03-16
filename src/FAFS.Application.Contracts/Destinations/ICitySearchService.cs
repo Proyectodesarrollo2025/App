@@ -10,5 +10,6 @@ namespace FAFS.Destinations
     public interface ICitySearchService
     {
         Task<CitySearchResultDto> SearchCitiesAsync(CitySearchRequestDto request);
+        Task<CityDto?> GetCityDetailsAsync(string cityId);
     }
 }

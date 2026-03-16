@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { finalize } from 'rxjs/operators';
-
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { ToasterService } from '@abp/ng.theme.shared';
+import { ConfigStateService } from '@abp/ng.core';
 
-
-import { DestinationService } from '@proxy/destinations';
-import { CityDto, CitySearchRequestDto } from '@proxy/application/contracts/destinations/models';
+import { DestinationService, FavoriteDestinationService, DestinationRatingService } from '@proxy/destinations';
+import { CityDto, CitySearchRequestDto, DestinationDto, DestinationRatingDto } from '@proxy/application/contracts/destinations/models';
 
 @Component({
   selector: 'app-destinations-list',
@@ -15,54 +15,73 @@ import { CityDto, CitySearchRequestDto } from '@proxy/application/contracts/dest
   styleUrls: ['./destinations-list.component.scss']
 })
 export class DestinationsListComponent implements OnInit {
-   
-  cities: CityDto[] = [];
+
+  cities: any[] = [];
+  savedDestinations: DestinationDto[] = [];
   isLoading = false;
+  showFilters = false;
+  selectedCity: any = null;
+  showModal = false;
+
+  popularDestinations: DestinationDto[] = [];
+  selectedDestinationRatings: DestinationRatingDto[] = [];
+  averageRating = 0;
+  userRating: DestinationRatingDto | null = null;
+  newRating = { score: 5, comment: '' };
+  isRatingDraft = false;
+  currentUserId: string | null = null;
 
   searchParams = {
     query: '',
-    country: ''
+    country: '',
+    region: '',
+    minPopulation: null as number | null
   };
 
- 
   private searchSubject = new Subject<string>();
 
-  constructor(private destinationService: DestinationService) {}
+  constructor(
+    private destinationService: DestinationService,
+    private favoriteService: FavoriteDestinationService,
+    private ratingService: DestinationRatingService,
+    private toasterService: ToasterService,
+    private configState: ConfigStateService
+  ) { 
+    this.currentUserId = this.configState.getDeep('currentUser.id');
+  }
 
   ngOnInit(): void {
-    
+    this.loadSavedDestinations();
+    this.loadPopularDestinations();
+
     this.searchSubject.pipe(
-      debounceTime(800),      
-      distinctUntilChanged()  
+      debounceTime(1200),
+      distinctUntilChanged()
     ).subscribe((searchTerm) => {
-     
       this.executeSearch(searchTerm);
     });
   }
 
-  
   onSearchChange(): void {
     this.searchSubject.next(this.searchParams.query);
   }
 
- 
   onSearch(): void {
     this.executeSearch(this.searchParams.query);
   }
 
-  
   private executeSearch(query: string): void {
-    // Validamos que haya algo que buscar (texto o país)
-    if (!query && !this.searchParams.country) return;
+    if (this.isLoading) return;
+    if (!query && !this.searchParams.country && !this.searchParams.region) return;
 
     this.isLoading = true;
-   
-    // this.cities = []; 
 
     const request: CitySearchRequestDto = {
       partialName: query,
       limit: 10,
-      countryCode: this.searchParams.country || undefined
+      countryCode: this.searchParams.country || undefined,
+      regionCode: this.searchParams.region || undefined,
+      minPopulation: this.searchParams.minPopulation || undefined
     };
 
     this.destinationService.searchCities(request)
@@ -70,18 +89,167 @@ export class DestinationsListComponent implements OnInit {
       .subscribe({
         next: (result: any) => {
           this.cities = result.cities || result.items || [];
+          this.fetchUnsplashImages();
         },
         error: (err) => {
           console.error('Error:', err);
+          this.toasterService.error('Error al buscar ciudades', 'Error');
           this.cities = [];
         }
       });
   }
 
+  private fetchUnsplashImages() {
+    const curatedPhotoIds = [
+      '1502602898657-3e91760cbb34', '1449156001566-35957096fb91', '1477959858617-67f85cf4f1df',
+      '1513635269975-59663e0ac1ad', '1501594907352-0dfc58eb36fe', '1552832230-019623e618aa',
+      '1523482580672-f109ba8cb9be', '1520117147647-0349b22ef104', '1493333858332-df7ed0ec419e',
+      '1512100353987-0b19280d4607', '1533105079780-92b9be482077', '1464822759023-fed622ff2c3b',
+      '1503389158882-9366144bea98', '1480714378408-67cf0d13bc1b', '1518684079-3c830dcef090',
+      '1529156069912-ab0023a73e1c', '1507525428034-b723cf961d3e', '1519501025264-65ba15a82390',
+      '1534447677768-be436bb09401', '1517154421773-0529f29ea451'
+    ];
+
+    for (let i = 0; i < this.cities.length; i++) {
+      const city = this.cities[i];
+      const charSum = city.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const photoId = curatedPhotoIds[charSum % curatedPhotoIds.length];
+      city.wikiImage = `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&w=800&q=80`;
+    }
+  }
+
+  loadPopularDestinations(): void {
+    this.destinationService.getList({ maxResultCount: 20 })
+      .subscribe(result => {
+        const items = (result as any).items || result || [];
+        // Filtramos y ordenamos por calificación
+        this.popularDestinations = items
+          .filter(d => (d.averageRating || 0) > 0)
+          .sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
+          .slice(0, 4);
+
+        // Fallback inteligente: si no hay suficientes calificados, rellenar con los últimos guardados
+        if (this.popularDestinations.length < 4) {
+          const others = items.filter(d => !this.popularDestinations.find(p => p.id === d.id)).slice(0, 4 - this.popularDestinations.length);
+          this.popularDestinations = [...this.popularDestinations, ...others];
+        }
+      });
+  }
+
+  async openCityDetails(city: any) {
+    this.selectedCity = city;
+    this.showModal = true;
+    this.selectedDestinationRatings = [];
+    this.averageRating = 0;
+    this.userRating = null;
+    this.isRatingDraft = false;
+
+    const existingDest = this.savedDestinations.find(d => 
+      (d.city === city.name || d.city === city.city) && d.country === city.country);
+
+    if (existingDest) {
+      this.loadRatings(existingDest.id);
+    }
+
+    if (city.description) return;
+
+    try {
+      const searchTerms = [
+        `${city.name}, ${city.country} (localidad)`,
+        `${city.name}, ${city.country} (municipio)`,
+        `${city.name} ${city.country}`
+      ];
+
+      const BANNED = /enfermedad|político|partido|médico|virus|biografía|nacido en|elecciones|mosquito|protesta/i;
+      const REQUIRED = /ciudad|municipio|localidad|población|situado|clima|turismo|historia/i;
+      let foundExtract = '';
+
+      for (const term of searchTerms) {
+        const url = `https://es.wikipedia.org/w/api.php?action=query&format=json&generator=search&gsrsearch=${encodeURIComponent(term)}&gsrlimit=3&prop=extracts&exintro&explaintext&exchars=600&origin=*`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.query?.pages) {
+          for (const id in data.query.pages) {
+            const extract = data.query.pages[id].extract || '';
+            if (REQUIRED.test(extract) && !BANNED.test(extract)) {
+              foundExtract = extract;
+              break;
+            }
+          }
+        }
+        if (foundExtract) break;
+      }
+      city.description = foundExtract || `Descubre ${city.name}, un destino fascinante en ${city.country} conocido por su vibrante cultura y hospitalidad.`;
+    } catch (e) {
+      city.description = "La información sobre este destino se está actualizando.";
+    }
+  }
+
+  closeDetails() {
+    this.showModal = false;
+  }
+
+  loadSavedDestinations(): void {
+    this.favoriteService.getMyFavorites().subscribe(result => {
+      this.savedDestinations = result;
+    });
+  }
+
+  isFavorited(city: CityDto | any): boolean {
+    const cityName = city.name || city.city;
+    return this.savedDestinations.some(d => d.city === cityName && d.country === city.country);
+  }
+
+  getFavoriteId(city: CityDto | any): string | undefined {
+    const cityName = city.name || city.city;
+    return this.savedDestinations.find(d => d.city === cityName && d.country === city.country)?.id;
+  }
+
+  toggleFavorite(city: CityDto | any): void {
+    const existingId = this.getFavoriteId(city);
+    if (existingId) {
+      this.favoriteService.toggleFavorite(existingId).subscribe({
+        next: () => this.loadSavedDestinations(),
+        error: () => this.toasterService.error('Error al cambiar favorito')
+      });
+    } else {
+      const input = {
+        name: city.name || city.city,
+        country: city.country,
+        city: city.name || city.city,
+        latitude: city.latitude,
+        longitude: city.longitude,
+        photoUrl: city.wikiImage || ''
+      };
+      this.destinationService.create(input).subscribe({
+        next: (newDest) => {
+          this.favoriteService.toggleFavorite(newDest.id).subscribe(() => this.loadSavedDestinations());
+        },
+        error: () => this.toasterService.error('Error al guardar destino')
+      });
+    }
+  }
+
+  toggleFilters(): void {
+    this.showFilters = !this.showFilters;
+  }
+
   clearSearch(): void {
     this.searchParams.query = '';
     this.searchParams.country = '';
+    this.searchParams.region = '';
+    this.searchParams.minPopulation = null;
     this.cities = [];
+  }
+
+  getCityImageUrl(cityOrName: any, country?: string): string {
+    const name = typeof cityOrName === 'string' ? cityOrName : (cityOrName?.name || cityOrName?.city);
+    const countryName = country || cityOrName?.country || '';
+    if (!name) return 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=800&q=80';
+    const seed = name.length + (countryName.length * 2);
+    const tags = `${name.toLowerCase().replace(/\s+/g, '-')},landmark,city`;
+    return `https://loremflickr.com/800/600/${tags}/all?lock=${seed}`;
   }
 
   formatCoordinates(lat?: string, long?: string): string {
@@ -92,10 +260,93 @@ export class DestinationsListComponent implements OnInit {
     return `${latNum.toFixed(4)}, ${longNum.toFixed(4)}`;
   }
 
-  openInMaps(city: CityDto): void {
-    if (city.latitude && city.longitude) {
-      const url = `https://www.google.com/maps/search/?api=1&query=${city.latitude},${city.longitude}`;
-      window.open(url, '_blank');
+  openInMaps(lat?: string, long?: string): void {
+    if (lat && long) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${long}`, '_blank');
+    }
+  }
+
+  loadRatings(destinationId: string): void {
+    this.ratingService.getRatings(destinationId).subscribe(ratings => {
+      this.selectedDestinationRatings = ratings;
+      this.userRating = ratings.find(r => r.userId === this.currentUserId) || null;
+      if (this.userRating) {
+        this.newRating = { score: this.userRating.score, comment: this.userRating.comment || '' };
+      } else {
+        this.newRating = { score: 5, comment: '' };
+      }
+    });
+    this.ratingService.getAverageRating(destinationId).subscribe(avg => {
+      this.averageRating = avg;
+    });
+  }
+
+  submitRating(): void {
+    const existingDest = this.savedDestinations.find(d => 
+      (d.city === this.selectedCity.name || d.city === this.selectedCity.city) && d.country === this.selectedCity.country);
+
+    if (!existingDest) {
+      this.createAndRate(this.selectedCity);
+      return;
+    }
+
+    if (this.userRating) {
+      this.ratingService.updateRating(this.userRating.id, this.newRating.score, this.newRating.comment)
+        .subscribe(() => {
+          this.toasterService.success('Calificación actualizada');
+          this.loadRatings(existingDest.id);
+          this.isRatingDraft = false;
+        });
+    } else {
+      this.ratingService.rateDestination(existingDest.id, this.newRating.score, this.newRating.comment)
+        .subscribe(() => {
+          this.toasterService.success('Calificación guardada');
+          this.loadRatings(existingDest.id);
+          this.isRatingDraft = false;
+        });
+    }
+  }
+
+  private createAndRate(city: any): void {
+    const input = {
+      name: city.name || city.city,
+      country: city.country,
+      city: city.name || city.city,
+      latitude: city.latitude,
+      longitude: city.longitude,
+      photoUrl: city.wikiImage || ''
+    };
+    this.destinationService.create(input).subscribe(newDest => {
+      this.loadSavedDestinations();
+      this.ratingService.rateDestination(newDest.id, this.newRating.score, this.newRating.comment)
+        .subscribe(() => {
+          this.toasterService.success('Destino guardado y calificado');
+          this.loadRatings(newDest.id);
+          this.isRatingDraft = false;
+        });
+    });
+  }
+
+  deleteRating(): void {
+    if (!this.userRating) return;
+    this.ratingService.deleteRating(this.userRating.id).subscribe(() => {
+      this.toasterService.success('Calificación eliminada');
+      const existingDest = this.savedDestinations.find(d => 
+        (d.city === this.selectedCity.name || d.city === this.selectedCity.city) && d.country === this.selectedCity.country);
+      if (existingDest) this.loadRatings(existingDest.id);
+      this.userRating = null;
+      this.newRating = { score: 5, comment: '' };
+    });
+  }
+
+  editRating(): void {
+    this.isRatingDraft = true;
+  }
+
+  cancelEdit(): void {
+    this.isRatingDraft = false;
+    if (this.userRating) {
+      this.newRating = { score: this.userRating.score, comment: this.userRating.comment || '' };
     }
   }
 }
